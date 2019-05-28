@@ -1,0 +1,25 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static '/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static '/css/style.css' %}">
+    <script src="{% static '/js/bootstrap.min.js' %}"></script>
+    <link rel="icon" type="image/png" href="{% static '/img/favicon.png' %}">
+    <title>CS Cloud</title>
+    
+    {% block extrahead %}{% endblock %}
+</head>
+<body>
+{% if perms.is_staff or user.status == 'A' %}
+    {% include "cloud/baseAdmin.html" %}
+{% elif user.is_authenticated %}
+    {% include "cloud/baseUser.html" %}
+{% else %}
+    {% include "cloud/baseLogin.html" %}
+{% endif %}
+{% block context %}{% endblock %}
+</body>
+</html>

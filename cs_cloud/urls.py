@@ -18,6 +18,10 @@ from django.urls import path
 from cloud import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    #path('admin/', admin.site.urls),
     path('', views.index, name='index'),
+    path('login/', views.login, name='login'),
+    path('login/auth/', views.auth, name='auth'),
+    path('logout/', views.auth_logout, name='logout'),
+    path('recoverPassword/', views.recover_password, name="recoverPassword"),
 ]

@@ -55,7 +55,7 @@ ROOT_URLCONF = 'cs_cloud.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,3 +120,14 @@ AUTH_USER_MODEL = 'cloud.User'
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
+
+"""
+How long the 'Forgot Password' URL should be
+valid, in seconds.
+Current: 30 minutes
+"""
+FORGOT_PASSWORD_AGE = 60 * 30
