@@ -48,7 +48,7 @@ class PasswordResetTokenGenerator:
         # link is generated 5 minutes before midnight and used 6 minutes later,
         # that counts as 1 day. Therefore, PASSWORD_RESET_TIMEOUT_DAYS = 1 means
         # "at least 1 day, could be up to 2."
-        if (self._num_days(self._today()) - ts) > settings.PASSWORD_RESET_AGE:
+        if (self._num_days(self._today()) - ts) > settings.PASSWORD_RESET_TIMEOUT_DAYS:
             return False
 
         return True

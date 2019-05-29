@@ -21,7 +21,10 @@ urlpatterns = [
     #path('admin/', admin.site.urls),
     path('', views.index, name='index'),
     path('login/', views.login, name='login'),
-    path('login/auth/', views.auth, name='auth'),
-    path('logout/', views.auth_logout, name='logout'),
-    path('recoverPassword/', views.recover_password, name="recoverPassword"),
+    path('auth/login/', views.auth, name='auth'),
+    path('auth/logout/', views.auth_logout, name='logout'),
+    path('auth/forgotPassword/', views.forgot_password, name='forgotPassword'),
+    path('auth/recoverPassword/', views.recover_password, name="recoverPassword"),
+    path('auth/resetPassword/', views.reset_password, name="resetPassword"),
+    path('auth/resetPassword/<str:user_id>/<slug:token>/', views.reset_password_token, name="resetPasswordToken"),
 ]

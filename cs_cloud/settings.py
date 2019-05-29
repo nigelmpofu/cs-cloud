@@ -130,4 +130,22 @@ How long the 'Change Password' URL should be
 valid, in days.
 Current: 1 day (24 Hours)
 """
-PASSWORD_RESET_AGE = 1
+PASSWORD_RESET_TIMEOUT_DAYS = 1
+
+"""
+External server url
+TODO: CHANGE IN PRODUCTION
+"""
+#EXTERNAL_URL = 'http://cloud.cs.up.ac.za/'
+EXTERNAL_URL = 'http://127.0.0.1:8000/'
+
+"""
+Email settings
+TODO: CHANGE IN PRODUCTION
+"""
+FROM_EMAIL_ADDRESS = 'cs_cloud@cs.up.ac.za'
+EMAIL_USE_TLS = False
+EMAIL_HOST = ""
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""

@@ -1,39 +1,32 @@
 {% extends "cloud/base.html" %}
 {% load staticfiles %}
 {% block context %}
-    <div class="container col-md-offset-3 col-md-6">
-		<div class="container">
-		    <div class="row">
-		      <div class="col-sm-10 col-md-8 col-lg-6 mx-auto">
-		        <div class="card card-signin my-5 shadow p-4 mb-4 bg-white">
-		          <div class="card-body">
-		            <h5 class="card-title text-center">Sign In</h5>
-		            <form class="form-signin" role="form" method="post" action="/login/auth/">
-		            	{% csrf_token %}
-		            	<div class="form-label-group">
-		            		<label for="inputUser">Username</label>
-		            		<input name="{{loginForm.userName.html_name}}" type="text" id="inputUser" class="form-control" placeholder="Username" required autofocus>		                	
-		              	</div><br/>
-		              <div class="form-label-group">
-		              	<label for="inputPassword">Password</label>
-		                <input name="{{loginForm.password.html_name}}" type="password" id="inputPassword" class="form-control" placeholder="Password" required>		                
-		              </div><br/><br/>
-		              <button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Sign in</button>
-		              {% if messages %}
-		              	{% for message in messages %}
-		              		<hr class="my-4">
-		                    <div class = "alert alert-{{ message.tags }}">{{ message|safe }}</div>
-		                {% endfor %}
-		              {% endif %}
-		              <hr class="my-4">
-		              <a href="{% url 'recoverPassword' %}" style="text-align: center"><h5>Forgotten Password?</h5></a>
-		            </form>		            
-		          </div>
-		        </div>
-		      </div>
-		    </div>
-		  </div>        
-    	</div>
+<div class="container col-md-offset-3 col-md-6">
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-10 col-md-8 col-lg-6 mx-auto">
+				<div class="card card-signin my-5 shadow p-4 mb-4 bg-white">
+					<div class="card-body">
+						<h5 class="card-title text-center">Sign In</h5>
+						<form class="form-signin" role="form" method="post" action="/auth/login/">
+							{% csrf_token %}
+							{{ loginForm }}<br/><br/>
+							<button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Sign in</button>
+							{% if messages %}
+							{% for message in messages %}
+							<hr class="my-4">
+							<div class = "alert alert-{{ message.tags }}">{{ message|safe }}</div>
+							{% endfor %}
+							{% endif %}
+							<hr class="my-4">
+					  		<a href="{% url 'forgotPassword' %}" style="text-align: center"><h5>Forgotten Password?</h5></a>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 {% endblock %}
 {% block logout %}
 {% endblock %}
