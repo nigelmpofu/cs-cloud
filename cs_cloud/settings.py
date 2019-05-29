@@ -126,8 +126,8 @@ STATICFILES_DIRS = (
 )
 
 """
-How long the 'Forgot Password' URL should be
-valid, in seconds.
-Current: 30 minutes
+How long the 'Change Password' URL should be
+valid, in days.
+Current: 1 day (24 Hours)
 """
-FORGOT_PASSWORD_AGE = 60 * 30
+PASSWORD_RESET_AGE = 1
