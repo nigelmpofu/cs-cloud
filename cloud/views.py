@@ -40,7 +40,7 @@ def auth(request):
 						return change_password(request)
 
 					# Redirect based on user account type
-					if user.is_staff or user.is_superuser:
+					if user.is_user_admin:
 						return redirect('userAdmin')
 					else:
 						return redirect('files')
