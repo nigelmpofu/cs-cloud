@@ -24,13 +24,13 @@
 {% endblock extrahead %}
 {% block context %}
 <div class="container">
-	{% if messages %}
-	{% for message in messages %}
-	<div class="alert alert-{{ message.tags }}"><strong>{{ message }}</strong></div>
-	<hr class="my-4">
-	{% endfor %}
-	{% endif %}
 	<div class="shadow p-4 mb-4 bg-white">
+		{% if messages %}
+		{% for message in messages %}
+		<div class="alert alert-{{ message.tags }}"><strong>{{ message|safe }}</strong></div>
+		<hr class="my-4">
+		{% endfor %}
+		{% endif %}
 		<div id="accordion" class="accordion">
 			<div class="card mb-0">
 				<div class="card-header collapsed" data-toggle="collapse" href="#collapseOne">
@@ -40,13 +40,15 @@
 				</div>
 				<div id="collapseOne" class="collapse collapse" data-parent="#accordion">
 					<div class="card-body">
-						<form action="/userAdmin/submitForm/" method="post" onsubmit="return validateUserForm();" class="form-horizontal user-form" id="userForm" role="form">
+						<form action="{% url 'submitUser' %}" method="post" onsubmit="return validateUserForm();" class="form-horizontal user-form" id="userForm" role="form">
 							{% csrf_token %}
-							{{ userForm }}<br/>
+							{{ userForm }}
+							<label id="availStat-{{ userForm.user_id.html_name }}" hidden>unknown</label><br/>
+							<label id="availStat-{{ userForm.email.html_name }}" hidden>unknown</label><br/>
 							<div class="form-group">
 								<!-- Submit Button -->
 								<div class="col-sm-offset-2 col-sm-10">
-									<button type="submit" class="save btn btn-primary" id="submitUser">Submit</button>
+									<button type="submit" class="save btn btn-primary" id="submitUser">Create User Account</button>
 								</div>
 							</div>
 						</form>
@@ -166,7 +168,63 @@
 <script src="{% static '/js/search.js' %}"></script>
 <script src="{% static '/js/validation.js' %}"></script>
 <script type="text/javascript">
-	$(document).ready(function() {
+	/*
+	Function to check if the entered username and email are available for use
+	*/
+	function checkUser() {
+		checkAvail("{{ userForm.user_id.html_name }}");
+	}
+
+	function checkEmail() {
+		checkAvail("{{ userForm.email.html_name }}");
+	}
+	function resetUser() {
+		resetField("{{ userForm.user_id.html_name }}");
+	}
+	function resetEmail() {
+		resetField("{{ userForm.email.html_name }}");
+	}
+	function resetField(id) {
+		$("#" + id).removeAttr("style");
+		$("#" + id).removeAttr("data-toggle");
+		$("#" + id).removeAttr("title");
+		$("#availStat-" + id).text("unknown");
+	}
+	function checkAvail(id) {
+		if(!$.trim($("#" + id).val()).length) {
+			return; // Textbox blank
+		}
+
+		$.ajax({
+			url: "{% url 'checkUser' %}",
+			type: "POST",
+			async: true,
+			data: {'data': id == "{{ userForm.user_id.html_name }}" ? "ui" : "em", 'query': $.trim($("#" + id).val()),
+				'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').prop('value')},
+			dataType: "json",
+			success: function (data) {
+				if (data.result === 0) { // Available
+					$("#" + id).attr("style", "background-color: #387C44; color: white");
+					$("#" + id).attr("data-toggle", "tooltip");
+					$("#" + id).attr("title", "Title is available");
+					$("#availStat-" + id).text("true");								
+				} else {
+					$("#" + id).attr("style", "background-color: #C04000; color: white");
+					$("#" + id).attr("data-toggle", "tooltip");
+					$("#" + id).attr("title", "Title already exists");
+					$("#availStat-" + id).text("false");
+				}
+			},
+			failure: function () {
+				$("#availStat-" + id).text("fail");
+			},
+			error: function () {
+				$("#availStat-" + id).text("error");
+			},
+			timeout: 3000 // 3 Second timeout
+		});
+	}
+/*	$(document).ready(function() {
 		const table = $("#users").DataTable({
 			"initComplete": function () {
 				// Hook update user buttons
@@ -227,6 +285,6 @@
 				}
 			});
 		}
-	});
+	});*/
 </script>
 {% endblock context %}

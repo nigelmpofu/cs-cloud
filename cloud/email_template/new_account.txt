@@ -1,0 +1,15 @@
+Good day {first_name} {last_name}.
+
+A CS Cloud account has been created for you.
+Your CS Cloud username is: {username}
+
+Please click the link below to set your new password:
+{url}
+
+This link is valid for 24 hours.
+
+Alternatively, you may login using the following OTP:
+{otp}
+
+Kind regards,
+The CS Cloud Team

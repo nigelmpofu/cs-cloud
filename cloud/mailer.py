@@ -11,27 +11,36 @@ logger = logging.getLogger(__name__)
 # Returns a boolean;
 # True = email sent,
 # False = error
-def send_password_request_email(user_token, user_id, email_address, post_name, post_surname):
+def send_password_request_email(user_token, user_id, email_address, user_name, user_surname, new_account, user_otp=None):
 	try:
 		fn = "{first_name}"
 		ln = "{last_name}"
 		url = "{url}"
 		usn = "{username}"
+		otpstr = "{otp}"
 
 		request_url = settings.EXTERNAL_URL + 'auth/resetPassword/' + user_id + '/' + user_token
 
-		file_path = settings.BASE_DIR + '/cloud/email_template/password_request.txt'
+		if new_account:
+			file_path = settings.BASE_DIR + '/cloud/email_template/new_account.txt'
+			email_subject = "CS Cloud Account Created"
+		else:
+			file_path = settings.BASE_DIR + '/cloud/email_template/password_request.txt'
+			email_subject = "CS Cloud Password Reset Request"
+
 		file = open(file_path, 'a+')
 		file.seek(0)
 		email_text = file.read()
 		file.close()
 
-		email_subject = "CS Cloud Password Reset Request"
+		
 
-		email_text = email_text.replace(fn, post_name)
-		email_text = email_text.replace(ln, post_surname)
+		email_text = email_text.replace(fn, user_name)
+		email_text = email_text.replace(ln, user_surname)
 		email_text = email_text.replace(url, request_url)
 		email_text = email_text.replace(usn, user_id)
+		if new_account:
+			email_text = email_text.replace(otpstr, user_otp)
 
 		if settings.DEBUG:
 			# Print email to terminal for debugging purposes
@@ -45,5 +54,7 @@ def send_password_request_email(user_token, user_id, email_address, post_name, p
 
 		return True
 	except SMTPException as e:
-		logger.error('Error while sending mail: ' + str(e))
-		raise e
+		logger.error('Error while sending email: ' + str(e))
+		#raise e
+		return False
+

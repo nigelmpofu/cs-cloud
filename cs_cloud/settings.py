@@ -150,10 +150,11 @@ EXTERNAL_URL = 'http://127.0.0.1:8000/'
 """
 Email settings
 TODO: CHANGE IN PRODUCTION
+Note: nigelvm.com used for demonstration purposes only
 """
-FROM_EMAIL_ADDRESS = 'cs_cloud@cs.up.ac.za'
-EMAIL_USE_TLS = False
-EMAIL_HOST = ""
+FROM_EMAIL_ADDRESS = 'CS Cloud <cs_cloud@nigelvm.com>'
+EMAIL_USE_TLS = True
+EMAIL_HOST = "nigelvm.com"
 EMAIL_PORT = 25
-EMAIL_HOST_USER = ""
-EMAIL_HOST_PASSWORD = ""
+EMAIL_HOST_USER = "cs_cloud"
+EMAIL_HOST_PASSWORD = "cloud.cs.up.ac.za"

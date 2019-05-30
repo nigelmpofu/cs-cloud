@@ -50,7 +50,8 @@ class UserForm(forms.ModelForm):
 	user_id = forms.CharField(
 		label="Username:",
 		max_length=30,
-		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'user_id', 'placeholder': 'Username', 'required': True}))
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'user_id', 'placeholder': 'Username', 'required': True,
+							'onchange': 'checkUser()', 'oninput': 'resetUser()'}))
 
 	acc_type = forms.ChoiceField(
 		label="Account Type:",
@@ -85,7 +86,8 @@ class UserForm(forms.ModelForm):
 	email = forms.EmailField(
 		label="Email:",
 		max_length=100,
-		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'email', 'placeholder': 'Email Address', 'required': True}))
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'email', 'placeholder': 'Email Address', 'required': True,
+							'onchange': 'checkEmail()', 'oninput': 'resetEmail()'}))
 
 	quota = forms.CharField(
 		label="Disk Quota (MB):",

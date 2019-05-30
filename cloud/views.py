@@ -111,7 +111,7 @@ def reset_password(request):
 		try:
 			user = User.objects.get(user_id=user_id)
 			user_token = tokenizer.make_token(user)
-			mail_success = send_password_request_email(user_token, user.user_id, user.email, user.name, user.surname)
+			mail_success = send_password_request_email(user_token, user.user_id, user.email, user.name, user.surname, False)
 			if mail_success:
 				messages.success(request, "Check your inbox for a password reset email")
 				return redirect("login")
