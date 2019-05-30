@@ -1,4 +1,4 @@
-function validateUserForm() {
+function validateUserForm(studentID = true) {
 	var title = $("#title").val();
 	var initials = $("#initials").val();
 	var name = $("#name").val();
@@ -20,29 +20,30 @@ function validateUserForm() {
 		quota == null || quota == "") {
 		alert("Please fill in all fields");
 		return false;
-	}
-
-	if(password != passwordConfirm) {
-		alert("Passwords do not correspond");
-		return false;
-	}
+	}	
 
 	if(acc_type != 'A' && acc_type != 'a' && acc_type != 'U' && acc_type != 'u') {
 		alert("Please select a valid acc_type");
 		return false;
 	}
 	
-	if(user_id.length < 8 || user_id.length > 8) {
-		alert("Invalid user ID length");
-		return false;
-	}
-
-	for(var i = 0; i < user_id.length; ++i) {
-		if(isNaN(user_id[i])) {
-			alert("Please enter a valid user ID");
+	/**
+	* Validation for UP student numbers (8 digits long)
+	* studentID: boolean
+	**/
+	if(studentID) {
+		if(user_id.length < 8 || user_id.length > 8) {
+			alert("Invalid user ID length");
 			return false;
 		}
-	}
+
+		for(var i = 0; i < user_id.length; ++i) {
+			if(isNaN(user_id[i])) {
+				alert("Please enter a valid user ID");
+				return false;
+			}
+		}
+	}	
 	
 	if(cell.length < 10 || cell.length > 10) {
 		alert("Invalid cell number length");

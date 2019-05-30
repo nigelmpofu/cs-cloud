@@ -158,3 +158,21 @@ def admin_reset_password(request):
 	else:
 		# Get not allowed
 		return HttpResponseForbidden()
+
+
+@admin_required
+def users_delete(request):
+	if request.method == 'POST':
+		accounts_to_delete = request.POST.getlist("toDelete[]")
+		for user_id in accounts_to_delete:
+			user = get_object_or_404(User, pk=user_id)
+			if user == request.user:
+				# Cannot delete yourself
+				continue
+			user.delete()
+		# Deletion complete
+		return HttpResponse()
+	else:
+		# You don't get it
+		return HttpResponseForbidden()
+

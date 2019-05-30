@@ -41,7 +41,7 @@
 				</div>
 				<div id="collapseOne" class="collapse collapse" data-parent="#accordion">
 					<div class="card-body">
-						<form action="{% url 'submitUser' %}" method="post" onsubmit="return validateUserForm();" class="form-horizontal user-form" id="userForm" role="form">
+						<form action="{% url 'submitUser' %}" method="post" onsubmit="return validateUserForm(false);" class="form-horizontal user-form" id="userForm" role="form">
 							{% csrf_token %}
 							{{ userForm }}
 							<label id="availStat-{{ userForm.user_id.html_name }}" hidden>unknown</label><br/>
@@ -66,15 +66,15 @@
 					</a>
 				</div>
 				<div id="collapseTwo" class="collapse collapse" data-parent="#accordion2">
-					<div class="card-body">													
+					<div class="card-body" style="overflow-x: auto;">
 						<table id='users' class="table table-striped table-bordered">
 							<thead>
 								<tr>
 									<th>Username</th>
 									<th>Title</th>
-									<th>Initials</th>									
-									<th style="display: none;">First Name</th>									
-									<th>Surname</th>									
+									<th>Initials</th>
+									<th style="display: none;">First Name</th>
+									<th>Surname</th>
 									<th>Email</th>
 									<th style="display: none;">Cellphone</th>
 									<th>Admin Account</th>
@@ -87,25 +87,27 @@
 							</thead>
 							<tbody>
 								{% for user in users %}
-								<tr id="user{{ user.pk }}">
+								<tr id="user_id-{{ user.pk }}">
 									<td data-id="user_id">{{ user.user_id }}</td>
 									<td data-id="title">{{ user.title }}</td>
-									<td data-id="initials" >{{ user.initials }}</td>									
-									<td data-id="fname" style="display: none;">{{ user.name }}</td>									
-									<td data-id="surname">{{ user.surname }}</td>								
+									<td data-id="initials" >{{ user.initials }}</td>
+									<td data-id="fname" style="display: none;">{{ user.name }}</td>
+									<td data-id="surname">{{ user.surname }}</td>
 									<td data-id="email">{{ user.email }}</td>
 									<td data-id="cell" style="display: none;">{{ user.cell }}</td>
 									<td data-id="acc_type">{{ user.is_staff }}</td>
 									<td data-id="spaceUsed">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}</td>
 									<td data-id="quota" style="display: none;">{{ user.disk_quota|div:1048576 }}</td>
 									<td>
-										<button type="button" name="edit" class='btn btn-primary btn-xs edit'
+										<button type="button" name="edit" class='btn btn-primary btn-xs rounded-circle'
 												data-toggle="modal" data-target="#editModal"
 												data-csrf='{{ csrf_token }}' data-id="{{ user.user_id }}"
 												data-pk="{{ user.pk }}"><i class="fa fa-pencil" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Edit {{ user.user_id }}"></i></button>
 									</td>
 									<td>
-										<a type="button" class="btn btn-danger btn-xs" href="/userAdmin/userProfile/{{ user.pk }}"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></a>
+										<form>
+											<button type="button" class="btn btn-danger btn-xs rounded-circle" href="/userAdmin/userProfile/{{ user.pk }}"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></button>
+										</form>
 									</td>
 									<td>
 										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
@@ -116,7 +118,7 @@
 							</tbody>
 						</table><br/>
 						<button type="button" name="remove" id="remove" class='btn btn-warning pull-left' data-csrf="{{csrf_token}}"
-								data-id="{{ user.user_id }}" data-pk="{{ user.pk }}">Delete Users</button>						
+								data-id="{{ user.user_id }}" data-pk="{{ user.pk }}">Delete Users</button>
 					</div>
 				</div>
 			</div>
@@ -165,7 +167,7 @@
 					$("#" + id).attr("style", "background-color: #387C44; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");
 					$("#" + id).attr("title", "Available");
-					$("#availStat-" + id).text("true");								
+					$("#availStat-" + id).text("true");
 				} else {
 					$("#" + id).attr("style", "background-color: #C04000; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");
@@ -199,30 +201,10 @@
 				{ "orderable": false, "searchable": false },
 				{ "orderable": false, "searchable": false },
 				{ "orderable": false, "searchable": false }
-			  ],
+			],
 			"initComplete": function () {
 				// Hook update user buttons
 				editUserHookUpdateButtons(this.api().rows().nodes().toJQuery());
-			}			
-		});
-		$(".btn.more").on("click", function () {
-			var pk = $(this).data("pk");
-			window.location.href = "" + pk;
-		});
-	});
-	$("#updateEmailConfirm").on("click", function() {
-		var emailText = $("#emailText").val();
-		var token = $(this).data("csrf");
-		var data = {
-			'emailText': emailText,
-			'csrfmiddlewaretoken': token
-		};
-		$.ajax({
-			type: 'POST',
-			url: '/userAdmin/updateEmail/',
-			data: data,
-			success: function() {
-				alert("Updated");
 			}
 		});
 	});
@@ -243,21 +225,30 @@
 			toDeleteMessage += value.id + "\n";
 			toDeleteList.push(value.pk);
 		});
-		if(confirm(toDeleteMessage)) {
-			var data = {
-				'toDelete': toDeleteList,
-				'csrfmiddlewaretoken': token
-			};
-			$.ajax({
-				type: 'POST',
-				url: '/userAdmin/delete/',
-				data: data,
-				success: function() {
-					$.each(toDeleteList, function(index, value) {
-						$("#users > tbody > tr#" + value).fadeOut(500);
-					});
-				}
-			});
+		if(toDeleteList.length > 0) {
+			if(confirm(toDeleteMessage)) {
+				var data = {
+					'toDelete': toDeleteList,
+					'csrfmiddlewaretoken': token
+				};
+				$.ajax({
+					type: 'POST',
+					url: "{% url 'adminDeleteUser' %}",
+					data: data,
+					success: function() {
+						$.each(toDeleteList, function(index, value) {
+							$("input:checked.multiRemove").each(function() {
+								if (this.checked) {
+									this.checked = false; // Uncheck deleted
+								}
+							});
+							$("#users > tbody > tr#user_id-" + value).fadeOut(500);
+						});
+					}
+				});
+			}
+		} else {
+			alert("Please select at least one user account to delete");
 		}
 	});
 </script>

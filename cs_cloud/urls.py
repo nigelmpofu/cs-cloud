@@ -19,6 +19,7 @@ from cloud import views, adminViews, userViews
 
 urlpatterns = [
 	#path('admin/', admin.site.urls),
+	path('robots.txt', views.robots_txt, name="robotsTxt"),
 	path('', views.index, name='index'),
 	path('login/', views.login, name='login'),
 	path('auth/login/', views.auth, name='auth'),
@@ -33,6 +34,7 @@ urlpatterns = [
 	path('admin/userAdmin/submitUser/', adminViews.submit_user, name="submitUser"),
 	path('admin/userAdmin/checkUser/', adminViews.check_user, name="checkUser"),
 	path('admin/userAdmin/editUser/', adminViews.edit_user, name="adminEditUser"),
+	path('admin/userAdmin/deleteUser/', adminViews.users_delete, name="adminDeleteUser"),
 	path('admin/userAdmin/resetPassword/', adminViews.admin_reset_password, name="adminResetPassword"),
 	path('admin/files/', adminViews.admin_files, name="adminFiles"),
 ]

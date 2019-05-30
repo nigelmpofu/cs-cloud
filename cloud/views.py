@@ -28,6 +28,8 @@ def index(request):
 	else:
 		return login(request)
 
+def robots_txt(request):
+	return HttpResponse("User-Agent: *\nDisallow: /", content_type="text/plain")
 
 def auth(request):
 	if request.method == 'POST':
