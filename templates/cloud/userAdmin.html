@@ -1,5 +1,6 @@
 ﻿{% extends "cloud/base.html" %}
 {% load staticfiles %}
+{% load mathfilters %}
 {% block extrahead %}
 	<title>User Admin - CS Cloud</title>
 	<style>
@@ -82,7 +83,7 @@
 									<th data-defaultsort='disabled'>Cell</th>
 									<th>Email</th>
 									<th>Account Type</th>
-									<th>Disk Quota</th>
+									<th>Disk Quota (MiB)</th>
 									<th>Edit</th>
 									<th>Remove</th>
 								</tr>
@@ -97,8 +98,8 @@
 									<td data-id="surname">{{ user.surname }}</td>
 									<td data-id="cell">{{ user.cell }}</td>
 									<td data-id="email">{{ user.email }}</td>
-									<td data-id="acc_type">{{ user.acc_type }}</td>
-									<td data-id="quota">{{ user.quota }}</td>
+									<td data-id="acc_type">{{ user.is_staff }}</td>
+									<td data-id="quota">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}</td>
 									<td>
 										<a type="button" class="btn btn-success btn-xs"
 										   href="/userAdmin/userProfile/{{ user.pk }}">R</a>

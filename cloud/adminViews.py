@@ -14,7 +14,8 @@ from .models import User
 @admin_required
 def user_admin(request):
 	user_form = UserForm()
-	context = {'userForm': user_form}
+	users = User.objects.all
+	context = {'userForm': user_form, 'users': users}
 	return render(request, 'cloud/userAdmin.html', context)
 
 @admin_required
@@ -29,7 +30,7 @@ def create_new_user(user_id, user_title, user_initials, user_name, user_surname,
 									disk_quota=user_quota, password=random_password)
 
 	if user:
-		user_token = tokenizer.make_token(user)
+		user_token = tokenizer.make_token(user) # Create password reset token
 		send_password_request_email(user_token, user_id, user_email, user_name, user_surname, True, random_password)
 		user.save()
 
@@ -55,6 +56,15 @@ def submit_user(request):
 			else:
 				post_is_admin = False
 			post_quota = int(user_form.cleaned_data['quota']) * 1024 * 1024 # Convert Mib to bytes
+
+			# Check if username/email available
+			if User.objects.filter(user_id=post_user_id).exists():
+				messages.error(request, "Error: The username is taken")
+				return redirect("userAdmin")
+
+			if User.objects.filter(email=post_email).exists():
+				messages.error(request, "Error: The email address is already in use")
+				return redirect("userAdmin")
 
 			try:
 				user = create_new_user(post_user_id, post_title, post_initials, post_name, post_surname, post_cell,
@@ -86,12 +96,12 @@ def check_user(request):
 		search_data = request.POST.get("data", "")
 		search_query = request.POST.get("query", None)
 		if search_data == "ui":			
-			if User.objects.filter(user_id=search_query).exists():				
+			if User.objects.filter(user_id=search_query).exists():
 				return JsonResponse({'result': 1})
 			else:				
 				return JsonResponse({'result': 0})
 		elif search_data == "em":
-			if User.objects.filter(email=search_query).exists():				
+			if User.objects.filter(email=search_query).exists():
 				return JsonResponse({'result': 1})
 			else:
 				return JsonResponse({'result': 0})
