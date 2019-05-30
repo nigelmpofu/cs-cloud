@@ -30,4 +30,5 @@ urlpatterns = [
 	
 	# Admin URL
 	path('admin/userAdmin/', adminViews.user_admin, name="userAdmin"),
+	path('admin/files/', adminViews.admin_files, name="adminFiles"),
 ]

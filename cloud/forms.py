@@ -42,3 +42,53 @@ class ResetForm(forms.Form):
 		max_length=16,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'user_id', 'required': True, 'autofocus': True}))
 
+class UserForm(forms.ModelForm):
+	class Meta:
+		model = User
+		fields = ['user_id', 'acc_type', 'title', 'initials', 'name', 'surname', 'cell', 'email', 'quota']
+
+	user_id = forms.CharField(
+		label="Username:",
+		max_length=30,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'user_id', 'placeholder': 'Username', 'required': True}))
+
+	acc_type = forms.ChoiceField(
+		label="Account Type:",
+		choices=(('', '',), ('U', 'User',), ('A', 'Admin',)),
+		widget=forms.Select(attrs={'class': 'form-control', 'id': 'acc_type', 'required': True}))
+
+	title = forms.ChoiceField(
+		label="Title:",
+		choices=(('', '',), ('Mr', 'Mr',), ('Ms', 'Ms',), ('Miss', 'Miss',), ('Mrs', 'Mrs',), ('Dr', 'Dr',)),
+		widget=forms.Select(attrs={'class': 'form-control', 'id': 'title'}))
+
+	initials = forms.CharField(
+		label="Initials:",
+		max_length=5,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'initials', 'placeholder': 'Initials'}))
+
+	name = forms.CharField(
+		label="First Name:",
+		max_length=50,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'name', 'placeholder': 'First Name'}))
+
+	surname = forms.CharField(
+		label="Surname:",
+		max_length=50,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'surname', 'placeholder': 'Surname'}))
+
+	cell = forms.CharField(
+		label="Cell Number:",
+		max_length=10,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'cell', 'placeholder': 'Cellphone Number'}))
+
+	email = forms.EmailField(
+		label="Email:",
+		max_length=100,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'email', 'placeholder': 'Email Address', 'required': True}))
+
+	quota = forms.CharField(
+		label="Disk Quota (MB):",
+		max_length = 8,
+		widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'quota', 'value': 100, 'required': True})) # Default 100 MB
+

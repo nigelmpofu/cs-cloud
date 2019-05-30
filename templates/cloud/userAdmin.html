@@ -1,0 +1,232 @@
+﻿{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% block extrahead %}
+	<title>User Admin - CS Cloud</title>
+	<style>
+	a {
+		font-family: sans-serif;
+		color: #303030
+	}
+	p {
+		padding-left: 5px;
+		font-size: 16pt
+	}
+	.accordion .card-header:after {
+		font-family: 'FontAwesome';
+		font-size: 17pt;
+		content: "\f068";
+		float:right
+	}
+	.accordion .card-header.collapsed:after {
+		content: "\f067"
+	}
+</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="container">
+	{% if messages %}
+	{% for message in messages %}
+	<div class="alert alert-{{ message.tags }}"><strong>{{ message }}</strong></div>
+	<hr class="my-4">
+	{% endfor %}
+	{% endif %}
+	<div class="shadow p-4 mb-4 bg-white">
+		<div id="accordion" class="accordion">
+			<div class="card mb-0">
+				<div class="card-header collapsed" data-toggle="collapse" href="#collapseOne">
+					<a class="card-title">
+						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">User Registration</p>
+					</a>
+				</div>
+				<div id="collapseOne" class="collapse collapse" data-parent="#accordion">
+					<div class="card-body">
+						<form action="/userAdmin/submitForm/" method="post" onsubmit="return validateUserForm();" class="form-horizontal user-form" id="userForm" role="form">
+							{% csrf_token %}
+							{{ userForm }}<br/>
+							<div class="form-group">
+								<!-- Submit Button -->
+								<div class="col-sm-offset-2 col-sm-10">
+									<button type="submit" class="save btn btn-primary" id="submitUser">Submit</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Maintain Users -->
+		<div id="accordion2" class="accordion">
+			<div class="card mb-0">
+				<div class="card-header collapsed" data-toggle="collapse" href="#collapseTwo">
+					<a class="card-title">
+						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">Maintain Users</p>
+					</a>
+				</div>
+				<div id="collapseTwo" class="collapse collapse" data-parent="#accordion2">
+					<div class="card-body">
+						<input type="text" class="form-control" id="search" placeholder="Search"
+							   onkeyup="showResult(this.value)"> 
+
+						<div>
+							<!-- ToDo fix sortable -->
+							<table id='users' class="table">
+								<thead>
+								<tr>
+									<th>User Name</th>
+									<th>Title</th>
+									<th>Initials</th>
+									<th>First Name</th>
+									<th>Surname</th>
+									<th data-defaultsort='disabled'>Cell</th>
+									<th>Email</th>
+									<th>Account Type</th>
+									<th>Disk Quota</th>
+									<th>Edit</th>
+									<th>Remove</th>
+								</tr>
+								</thead>
+								<tbody>
+								{% for user in users %}
+								<tr id="user{{ user.pk }}">
+									<td data-id="user_id">{{ user.user_id }}</td>
+									<td data-id="title">{{ user.title }}</td>
+									<td data-id="initials">{{ user.initials }}</td>
+									<td data-id="name">{{ user.name }}</td>
+									<td data-id="surname">{{ user.surname }}</td>
+									<td data-id="cell">{{ user.cell }}</td>
+									<td data-id="email">{{ user.email }}</td>
+									<td data-id="acc_type">{{ user.acc_type }}</td>
+									<td data-id="quota">{{ user.quota }}</td>
+									<td>
+										<a type="button" class="btn btn-success btn-xs"
+										   href="/userAdmin/userProfile/{{ user.pk }}">R</a>
+									</td>
+									<td>
+										<button type="button" name="edit" class='btn btn-success btn-xs edit'
+												data-toggle="modal" data-target="#editModal"
+												data-csrf='{{ csrf_token }}' data-id="{{ user.user_id }}"
+												data-pk="{{ user.pk }}">
+											&#9998;
+										</button>
+									</td>
+
+									<td>
+										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
+											   data-pk="{{ user.pk }}">
+									</td>
+								</tr>
+								{% endfor %}
+								</tbody>
+							</table>
+							<br>
+							<button type="button" name="remove" id="remove" class='btn btn-warning pull-right'
+									data-csrf="{{ csrf_token }}" data-id="{{ user.user_id }}"
+									data-pk="{{ user.pk }}">
+								Delete Users
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% include "cloud/userEditModal.html" %}
+<div id="editEmailTemplate" class="modal fade" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Edit Email Template</h4>
+			</div>
+			<div class="modal-body">
+				<form role="form" id="modalEmailForm">
+					<div class="form-group">
+						<label for="user_id">Email Text:</label>
+						<p>
+							Please use {first_name}, {last_name}, {otp}, {datetime} and {login} to indicate the
+							positioning of the user's first name, last name, one time password,
+							time of registration and login details, example:<br><br>
+							Hello {first_name} {last_name} your username is {login} and your OTP is {otp}. It
+							expires in 7 days from {datetime}
+						</p>
+						<textarea id="emailText" rows="15" type="text" class="form-control" id="email_text">{{ email_text }}</textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-success" data-csrf='{{ csrf_token }}'
+						id="updateEmailConfirm" data-dismiss="modal">Update
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="{% static '/js/search.js' %}"></script>
+<script src="{% static '/js/validation.js' %}"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		const table = $("#users").DataTable({
+			"initComplete": function () {
+				// Hook update user buttons
+				editUserHookUpdateButtons(this.api().rows().nodes().toJQuery());
+			}
+		});
+		$(".btn.more").on("click", function () {
+			var pk = $(this).data("pk");
+			window.location.href = "" + pk;
+		});
+	});
+	$("#updateEmailConfirm").on("click", function() {
+		var emailText = $("#emailText").val();
+		var token = $(this).data("csrf");
+		var data = {
+			'emailText': emailText,
+			'csrfmiddlewaretoken': token
+		};
+		$.ajax({
+			type: 'POST',
+			url: '/userAdmin/updateEmail/',
+			data: data,
+			success: function() {
+				alert("Updated");
+			}
+		});
+	});
+	$("#remove").on("click", function () {
+		var toDelete = [];
+		var token = $(this).data("csrf");
+		$("input:checked.multiRemove").each(function() {
+			if (this.checked) {
+				toDelete.push({
+					"id": $(this).data("id"),
+					"pk": $(this).data("pk")
+				});
+			}
+		});
+		var toDeleteMessage = "Are you sure you want to delete these users:\n";
+		var toDeleteList = [];
+		$.each(toDelete, function(index, value) {
+			toDeleteMessage += value.id + "\n";
+			toDeleteList.push(value.pk);
+		});
+		if(confirm(toDeleteMessage)) {
+			var data = {
+				'toDelete': toDeleteList,
+				'csrfmiddlewaretoken': token
+			};
+			$.ajax({
+				type: 'POST',
+				url: '/userAdmin/delete/',
+				data: data,
+				success: function() {
+					$.each(toDeleteList, function(index, value) {
+						$("#users > tbody > tr#" + value).fadeOut(500);
+					});
+				}
+			});
+		}
+	});
+</script>
+{% endblock context %}
