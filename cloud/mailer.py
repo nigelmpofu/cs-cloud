@@ -33,7 +33,9 @@ def send_password_request_email(user_token, user_id, email_address, post_name, p
 		email_text = email_text.replace(url, request_url)
 		email_text = email_text.replace(usn, user_id)
 
-		print(email_text)
+		if settings.DEBUG:
+			# Print email to terminal for debugging purposes
+			print(email_text)
 
 		# Emails are sent here
 		if settings.EMAIL_HOST != "":

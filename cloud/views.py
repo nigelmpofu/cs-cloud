@@ -20,7 +20,13 @@ def login(request):
 
 
 def index(request):
-	return login(request)
+	if request.user.is_authenticated:
+		if request.user.is_user_admin:
+			return redirect('userAdmin')
+		else:
+			return redirect('files')
+	else:
+		return login(request)
 
 
 def auth(request):
@@ -133,7 +139,7 @@ def reset_password_token(request, user_id, token):
 			return redirect("login")
 		else:
 			# Valid token
-			request.user = user
+			#request.user = user			
 			return change_password(request, token, user_id)
 
 	except User.DoesNotExist:

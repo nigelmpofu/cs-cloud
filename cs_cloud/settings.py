@@ -126,6 +126,14 @@ STATICFILES_DIRS = (
 )
 
 """
+Default disk quota assigned to each new user
+Units: Bytes (Base 2 - 1 kiB = 1024 bytes)
+Default: 100 MiB
+Note: Make migrations when updating value
+"""
+DEFAULT_QUOTA = 104857600
+
+"""
 How long the 'Change Password' URL should be
 valid, in days.
 Current: 1 day (24 Hours)

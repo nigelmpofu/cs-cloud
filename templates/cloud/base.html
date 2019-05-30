@@ -11,7 +11,7 @@
 	{% block extrahead %}{% endblock %}
 </head>
 <body>
-{% if perms.is_staff or user.status == 'A' %}
+{% if perms.is_staff %}
 	{% include "cloud/baseAdmin.html" %}
 {% elif user.is_authenticated %}
 	{% include "cloud/baseUser.html" %}

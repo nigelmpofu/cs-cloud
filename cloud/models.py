@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
@@ -20,6 +21,7 @@ class UserManager(BaseUserManager):
 			is_staff=True,
 			is_superuser=True,
 			is_active=True,
+			OTP=False,
 			**kwargs
 		)
 		user.set_password(password)
@@ -37,7 +39,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 	user_id = models.CharField(max_length=12, primary_key=True)
 	OTP = models.BooleanField(default=True)
-	status = models.CharField(max_length=1)
 
 	USERNAME_FIELD = 'user_id'
 	REQUIRED_FIELDS = ['email']
@@ -46,8 +47,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 	is_active = models.BooleanField(default=True, help_text='Designates whether this user should be treated as active.'
 															'Deselect this instead of deleting accounts.')
 
-	disk_quota = models.IntegerField(default=128, help_text='Available disk quota in megabytes.')
-	used_quota = models.IntegerField(default=0, help_text='Used disk quota in megabytes.')
+	disk_quota = models.BigIntegerField(default=settings.DEFAULT_QUOTA, help_text='Available disk quota in bytes.')
+	used_quota = models.BigIntegerField(default=0, help_text='Used disk quota in bytes.')
 
 	objects = UserManager()
 
