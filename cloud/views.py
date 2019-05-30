@@ -103,17 +103,20 @@ def forgot_password(request):
 	return render(request, 'cloud/forgotPassword.html', context)
 
 
-def reset_password(request):
+def reset_password(request, users_id=None):
 	if request.method == 'POST':
-		reset_form = ResetForm(request.POST)
-		reset_form.full_clean()
-		user_id = reset_form.cleaned_data['user_id']
+		if users_id == None:
+			reset_form = ResetForm(request.POST)
+			reset_form.full_clean()
+			user_id = reset_form.cleaned_data['user_id']
+		else:
+			user_id = users_id
 		try:
 			user = User.objects.get(user_id=user_id)
 			user_token = tokenizer.make_token(user)
 			mail_success = send_password_request_email(user_token, user.user_id, user.email, user.name, user.surname, False)
 			if mail_success:
-				messages.success(request, "Check your inbox for a password reset email")
+				messages.success(request, "Check inbox for password reset link")
 				return redirect("login")
 			else:
 				messages.error(request, "Could not send password reset email.<br/>Contact admin if problem persists")

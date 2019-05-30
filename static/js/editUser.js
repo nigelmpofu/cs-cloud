@@ -10,71 +10,77 @@ function editUserHookUpdateButtons(jQueryObject) {
 		var user_id = row.find("[data-id='user_id']");
 		var title = row.find("[data-id='title']");
 		var initials = row.find("[data-id='initials']");
-		var name = row.find("[data-id='name']");
+		var fname = row.find("[data-id='fname']");
 		var surname = row.find("[data-id='surname']");
-		var cell = row.find("[data-id='cell']");
 		var email = row.find("[data-id='email']");
-		var status = row.find("[data-id='status']");
+		var cellp = row.find("[data-id='cell']");
+		var acc_type = row.find("[data-id='acc_type']");
+		var quota = row.find("[data-id='quota']");
 
-		$("#e_user_id").val(user_id.val());
+		$("#e_user_id").val(user_id.text());
 		$("#e_title").val(title.text());
 		$("#e_initials").val(initials.text());
-		$("#e_name").val(name.text());
+		$("#e_fname").val(fname.text());
 		$("#e_surname").val(surname.text());
-		$("#e_cell").val(cell.text());
 		$("#e_email").val(email.text());
+		$("#e_cell").val(cellp.text());
+		//$("#e_acc_type").val(acc_type.text() === true);
+		$("#e_quota").val(parseInt(quota.text()));
 
-		var e_status = $("#e_status");
-		if (status.text() == "U") {
-			e_status.val("User");
-		} else if (status.text() == "A") {
-			e_status.val("Admin");
+		// For password reset form
+		$("#p_user_id").val(user_id.text());
+
+		var e_acc_type = $("#e_acc_type");
+		if(acc_type.text() == "True") {
+			e_acc_type.val("Admin");
 		} else {
-			e_status.val("");
+			e_acc_type.val("User");
 		}
-
-		if (!isAdmin) {
-			e_status.prop("disabled", true);
-		} else if (userPK == pk) {
+		
+		if(!isAdmin) {
+			e_acc_type.prop("disabled", true);
+		}/* else if(userPK == pk) {
 			$("#resetPassword").show();
 		} else {
 			$("#resetPassword").hide();
-		}
+		}*/
 
 		$("#updateConfirm").unbind('click').on("click", function () {
-			var uStatus = "";
+			var user_acc_type = false;
 
-			if (e_status.val() == "User") {
-				uStatus = "U";
-			} else if ($("#e_status").val() == "Admin") {
-				uStatus = "A";
+			if(e_acc_type.val() == "Admin") {
+				user_acc_type = true; // Admin
+			} else {
+				user_acc_type = false; // Not admin
 			}
 
 			var data = {
 				'user_id': $("#e_user_id").val(),
 				'title': $("#e_title").val(),
 				'initials': $("#e_initials").val(),
-				'name': $("#e_name").val(),
-				'surname': $("#e_surname").val(),
-				'cell': $("#e_cell").val(),
+				'name': $("#e_fname").val(),
+				'surname': $("#e_surname").val(),				
 				'email': $("#e_email").val(),
-				'status': uStatus,
+				'cell': $("#e_cell").val(),
+				'quota': (parseInt($("#e_quota").val()) * 1024 * 1024),
+				'acc_type': user_acc_type,
 				'csrfmiddlewaretoken': token
 			};
 
 			$.ajax({
 				type: 'POST',
-				url: '/userAdmin/update/' + pk,
+				url: '/admin/userAdmin/editUser/',
 				data: data,
 				success: function () {
 					user_id.text($("#e_user_id").val());
 					title.text($("#e_title").val());
 					initials.text($("#e_initials").val());
-					name.text($("#e_name").val());
+					fname.text($("#e_fname").val());
 					surname.text($("#e_surname").val());
-					cell.text($("#e_cell").val());
+					cellp.text($("#e_cell").val());
 					email.text($("#e_email").val());
-					status.text(uStatus);
+					quota.text($("#e_quota").val());
+					acc_type.text(user_acc_type);
 				}
 			});
 		});

@@ -66,68 +66,57 @@
 					</a>
 				</div>
 				<div id="collapseTwo" class="collapse collapse" data-parent="#accordion2">
-					<div class="card-body">
-						<input type="text" class="form-control" id="search" placeholder="Search"
-							   onkeyup="showResult(this.value)"> 
-
-						<div>
-							<!-- ToDo fix sortable -->
-							<table id='users' class="table">
-								<thead>
+					<div class="card-body">													
+						<table id='users' class="table table-striped table-bordered">
+							<thead>
 								<tr>
-									<th>User Name</th>
+									<th>Username</th>
 									<th>Title</th>
-									<th>Initials</th>
-									<th>First Name</th>
-									<th>Surname</th>
-									<th data-defaultsort='disabled'>Cell</th>
+									<th>Initials</th>									
+									<th style="display: none;">First Name</th>									
+									<th>Surname</th>									
 									<th>Email</th>
-									<th>Account Type</th>
+									<th style="display: none;">Cellphone</th>
+									<th>Admin Account</th>
 									<th>Disk Quota (MiB)</th>
+									<th style="display: none;">Disk Quota</th>
 									<th>Edit</th>
-									<th>Remove</th>
+									<th>Delete</th>
+									<th><i class="fa fa-trash-o" data-toggle="tooltip" title="Multiple Delete"></i></th>
 								</tr>
-								</thead>
-								<tbody>
+							</thead>
+							<tbody>
 								{% for user in users %}
 								<tr id="user{{ user.pk }}">
 									<td data-id="user_id">{{ user.user_id }}</td>
 									<td data-id="title">{{ user.title }}</td>
-									<td data-id="initials">{{ user.initials }}</td>
-									<td data-id="name">{{ user.name }}</td>
-									<td data-id="surname">{{ user.surname }}</td>
-									<td data-id="cell">{{ user.cell }}</td>
+									<td data-id="initials" >{{ user.initials }}</td>									
+									<td data-id="fname" style="display: none;">{{ user.name }}</td>									
+									<td data-id="surname">{{ user.surname }}</td>								
 									<td data-id="email">{{ user.email }}</td>
+									<td data-id="cell" style="display: none;">{{ user.cell }}</td>
 									<td data-id="acc_type">{{ user.is_staff }}</td>
-									<td data-id="quota">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}</td>
+									<td data-id="spaceUsed">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}</td>
+									<td data-id="quota" style="display: none;">{{ user.disk_quota|div:1048576 }}</td>
 									<td>
-										<a type="button" class="btn btn-success btn-xs"
-										   href="/userAdmin/userProfile/{{ user.pk }}">R</a>
-									</td>
-									<td>
-										<button type="button" name="edit" class='btn btn-success btn-xs edit'
+										<button type="button" name="edit" class='btn btn-primary btn-xs edit'
 												data-toggle="modal" data-target="#editModal"
 												data-csrf='{{ csrf_token }}' data-id="{{ user.user_id }}"
-												data-pk="{{ user.pk }}">
-											&#9998;
-										</button>
+												data-pk="{{ user.pk }}"><i class="fa fa-pencil" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Edit {{ user.user_id }}"></i></button>
 									</td>
-
+									<td>
+										<a type="button" class="btn btn-danger btn-xs" href="/userAdmin/userProfile/{{ user.pk }}"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></a>
+									</td>
 									<td>
 										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
-											   data-pk="{{ user.pk }}">
+											   data-pk="{{ user.pk }}" data-toggle="tooltip" title="Delete {{ user.user_id }}?">
 									</td>
 								</tr>
 								{% endfor %}
-								</tbody>
-							</table>
-							<br>
-							<button type="button" name="remove" id="remove" class='btn btn-warning pull-right'
-									data-csrf="{{ csrf_token }}" data-id="{{ user.user_id }}"
-									data-pk="{{ user.pk }}">
-								Delete Users
-							</button>
-						</div>
+							</tbody>
+						</table><br/>
+						<button type="button" name="remove" id="remove" class='btn btn-warning pull-left' data-csrf="{{csrf_token}}"
+								data-id="{{ user.user_id }}" data-pk="{{ user.pk }}">Delete Users</button>						
 					</div>
 				</div>
 			</div>
@@ -135,38 +124,6 @@
 	</div>
 </div>
 {% include "cloud/userEditModal.html" %}
-<div id="editEmailTemplate" class="modal fade" role="dialog">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal">&times;</button>
-				<h4 class="modal-title">Edit Email Template</h4>
-			</div>
-			<div class="modal-body">
-				<form role="form" id="modalEmailForm">
-					<div class="form-group">
-						<label for="user_id">Email Text:</label>
-						<p>
-							Please use {first_name}, {last_name}, {otp}, {datetime} and {login} to indicate the
-							positioning of the user's first name, last name, one time password,
-							time of registration and login details, example:<br><br>
-							Hello {first_name} {last_name} your username is {login} and your OTP is {otp}. It
-							expires in 7 days from {datetime}
-						</p>
-						<textarea id="emailText" rows="15" type="text" class="form-control" id="email_text">{{ email_text }}</textarea>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-success" data-csrf='{{ csrf_token }}'
-						id="updateEmailConfirm" data-dismiss="modal">Update
-				</button>
-			</div>
-		</div>
-	</div>
-</div>
-
-<script src="{% static '/js/search.js' %}"></script>
 <script src="{% static '/js/validation.js' %}"></script>
 <script type="text/javascript">
 	/*
@@ -207,12 +164,12 @@
 				if (data.result === 0) { // Available
 					$("#" + id).attr("style", "background-color: #387C44; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");
-					$("#" + id).attr("title", "Title is available");
+					$("#" + id).attr("title", "Available");
 					$("#availStat-" + id).text("true");								
 				} else {
 					$("#" + id).attr("style", "background-color: #C04000; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");
-					$("#" + id).attr("title", "Title already exists");
+					$("#" + id).attr("title", "Already in use");
 					$("#availStat-" + id).text("false");
 				}
 			},
@@ -225,12 +182,28 @@
 			timeout: 3000 // 3 Second timeout
 		});
 	}
-/*	$(document).ready(function() {
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
 		const table = $("#users").DataTable({
+			"columns": [
+				{ "orderable": true, "searchable": true },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": true },
+				{ "orderable": false, "searchable": true },
+				{ "orderable": true, "searchable": true },
+				{ "orderable": false, "searchable": true },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false },
+				{ "orderable": false, "searchable": false }
+			  ],
 			"initComplete": function () {
 				// Hook update user buttons
 				editUserHookUpdateButtons(this.api().rows().nodes().toJQuery());
-			}
+			}			
 		});
 		$(".btn.more").on("click", function () {
 			var pk = $(this).data("pk");
@@ -286,6 +259,6 @@
 				}
 			});
 		}
-	});*/
+	});
 </script>
 {% endblock context %}

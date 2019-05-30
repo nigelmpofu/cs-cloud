@@ -32,5 +32,7 @@ urlpatterns = [
 	path('admin/userAdmin/', adminViews.user_admin, name="userAdmin"),
 	path('admin/userAdmin/submitUser/', adminViews.submit_user, name="submitUser"),
 	path('admin/userAdmin/checkUser/', adminViews.check_user, name="checkUser"),
+	path('admin/userAdmin/editUser/', adminViews.edit_user, name="adminEditUser"),
+	path('admin/userAdmin/resetPassword/', adminViews.admin_reset_password, name="adminResetPassword"),
 	path('admin/files/', adminViews.admin_files, name="adminFiles"),
 ]

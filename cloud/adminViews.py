@@ -3,13 +3,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
 from cloud.decorators.adminRequired import admin_required
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
 from .forms import UserForm
 from .mailer import send_password_request_email
 from .models import User
+from .views import reset_password
 
 @admin_required
 def user_admin(request):
@@ -24,7 +25,7 @@ def admin_files(request):
 
 
 def create_new_user(user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
-	random_password = User.objects.make_random_password(8) # Random password 8 characters long
+	random_password = User.objects.make_random_password(9) # Random password 9 characters long
 	user = User.objects.create_user(title=user_title, initials=user_initials, name=user_name, surname=user_surname,
 									cell=user_cell, email=user_email, user_id=user_id, OTP=True, is_staff=user_admin,
 									disk_quota=user_quota, password=random_password)
@@ -111,3 +112,49 @@ def check_user(request):
 	else:
 		# Get request not allowed
 		return JsonResponse({'result': -1})
+
+
+def str2bool(v):
+	return v.lower() in ("yes", "true", "t", "1")
+
+
+@admin_required
+def edit_user(request):
+	if request.method == 'POST':
+		post_user_id = request.POST.get("user_id")
+		post_title = request.POST.get("title")
+		post_initials = request.POST.get("initials")
+		post_name = request.POST.get("name")
+		post_surname = request.POST.get("surname")
+		post_cell = request.POST.get("cell")
+		post_email = request.POST.get("email")
+		post_quota = request.POST.get("quota")
+		post_is_admin = request.POST.get("acc_type")
+		user = get_object_or_404(User, pk=post_user_id)
+
+		# Save changes
+		user.title = post_title
+		user.initials = post_initials
+		user.name = post_name
+		user.surname = post_surname
+		user.cell = post_cell
+		user.email = post_email
+		user.disk_quota = post_quota
+		user.is_staff = str2bool(post_is_admin)		
+		user.save()
+		return HttpResponse()
+	else:
+		# Get Request not allowed
+		return HttpResponseForbidden()
+
+
+@admin_required
+def admin_reset_password(request):
+	if request.method == 'POST':
+		user_id = request.POST.get("p_user_id")
+		response = reset_password(request, users_id=user_id)
+		#messages.success(request, "Password reset email sent")
+		return redirect("userAdmin")
+	else:
+		# Get not allowed
+		return HttpResponseForbidden()
