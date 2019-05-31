@@ -37,5 +37,12 @@ urlpatterns = [
 	path('admin/userAdmin/editUser/', adminViews.edit_user, name="adminEditUser"),
 	path('admin/userAdmin/deleteUser/', adminViews.users_delete, name="adminDeleteUser"),
 	path('admin/userAdmin/resetPassword/', adminViews.admin_reset_password, name="adminResetPassword"),
-	path('admin/files/', adminViews.admin_files, name="adminFiles"),
+	
+	# File URLS
+	path('files/', userViews.file_explorer, name="fileExplorer"),
+	path('file/', userViews.file_browser, name="fileBrowser"),
+	path('file/details/', userViews.file_browser, name="fileDetails"),
+	path('file/download', userViews.file_download, name="fileDownload"),
+	path('file/upload/', userViews.file_browser, name="fileUpload"),
+	path('file/mkdir/', userViews.file_browser, name="createDirectory"),
 ]

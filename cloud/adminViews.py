@@ -22,24 +22,6 @@ def user_admin(request):
 	context = {'userForm': user_form, 'users': users}
 	return render(request, 'cloud/userAdmin.html', context)
 
-@admin_required
-def admin_files(request):
-	"""
-	Create admin user directory if account created with 
-		python3 manage.py createsuperuser
-	as the user directory might not have been created
-	"""
-	user_directory = settings.MEDIA_ROOT + "/" + request.user.user_id
-	if not os.path.exists(user_directory):
-		try:
-			os.mkdir(user_directory)
-		except OSError:
-			messages.error(request, "Error accessing your data.<br/>Contact admin")
-			logout(request)
-			return redirect("index")
-				
-	return HttpResponse("Admin Files")
-
 
 @admin_required
 def disk_usage(request):
