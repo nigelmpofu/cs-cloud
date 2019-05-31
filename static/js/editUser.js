@@ -2,10 +2,10 @@
 // DOM element from which to start searching for the user's fields
 function editUserHookUpdateButtons(jQueryObject) {
 	jQueryObject.find(".edit").on("click", function () {
-		var pk = $(this).data("pk");
-		$("#more").attr("data-pk", pk);
+		var pk = $(this).data("pk");		
 		var token = $(this).data("csrf");
-		var row = $("#user" + pk);
+		var row = $("#user_id-" + pk);
+		$("#modalTitle").html("Edit User: <b>" + pk + "</b>");
 
 		var user_id = row.find("[data-id='user_id']");
 		var title = row.find("[data-id='title']");
@@ -23,19 +23,19 @@ function editUserHookUpdateButtons(jQueryObject) {
 		$("#e_fname").val(fname.text());
 		$("#e_surname").val(surname.text());
 		$("#e_email").val(email.text());
-		$("#e_cell").val(cellp.text());
-		//$("#e_acc_type").val(acc_type.text() === true);
+		$("#e_cell").val(cellp.text());		
 		$("#e_quota").val(parseInt(quota.text()));
 
 		// For password reset form
 		$("#p_user_id").val(user_id.text());
 
+		// Get account type
 		var e_acc_type = $("#e_acc_type");
-		if(acc_type.text() == "True") {
+		if($(acc_type.html()).hasClass("fa-check")) {
 			e_acc_type.val("Admin");
 		} else {
 			e_acc_type.val("User");
-		}
+		}		
 		
 		if(!isAdmin) {
 			e_acc_type.prop("disabled", true);
@@ -59,7 +59,7 @@ function editUserHookUpdateButtons(jQueryObject) {
 				'title': $("#e_title").val(),
 				'initials': $("#e_initials").val(),
 				'name': $("#e_fname").val(),
-				'surname': $("#e_surname").val(),				
+				'surname': $("#e_surname").val(),
 				'email': $("#e_email").val(),
 				'cell': $("#e_cell").val(),
 				'quota': (parseInt($("#e_quota").val()) * 1024 * 1024),
@@ -80,7 +80,11 @@ function editUserHookUpdateButtons(jQueryObject) {
 					cellp.text($("#e_cell").val());
 					email.text($("#e_email").val());
 					quota.text($("#e_quota").val());
-					acc_type.text(user_acc_type);
+					if(user_acc_type) {
+						acc_type.html("<i class=\"fa fa-check\" style=\"font-size: 16pt;\"></i>"); // Admin
+					} else {
+						acc_type.html("<i class=\"fa fa-times\" style=\"font-size: 16pt;\"></i>");
+					}
 				}
 			});
 		});

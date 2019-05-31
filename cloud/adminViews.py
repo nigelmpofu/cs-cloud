@@ -24,6 +24,11 @@ def admin_files(request):
 	return HttpResponse("Admin Files")
 
 
+@admin_required
+def disk_usage(request):
+	return HttpResponse("Disk Usage")
+
+
 def create_new_user(user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
 	random_password = User.objects.make_random_password(9) # Random password 9 characters long
 	user = User.objects.create_user(title=user_title, initials=user_initials, name=user_name, surname=user_surname,

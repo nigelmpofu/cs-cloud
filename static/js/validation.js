@@ -1,3 +1,8 @@
+function validateEmail(email) {
+	var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+	return re.test(String(email).toLowerCase());
+}
+
 function validateUserForm(studentID = true) {
 	var title = $("#title").val();
 	var initials = $("#initials").val();
@@ -23,7 +28,7 @@ function validateUserForm(studentID = true) {
 	}	
 
 	if(acc_type != 'A' && acc_type != 'a' && acc_type != 'U' && acc_type != 'u') {
-		alert("Please select a valid acc_type");
+		alert("Please select a valid account type");
 		return false;
 	}
 	
@@ -33,28 +38,33 @@ function validateUserForm(studentID = true) {
 	**/
 	if(studentID) {
 		if(user_id.length < 8 || user_id.length > 8) {
-			alert("Invalid user ID length");
+			alert("Invalid user ID length\n8 digits are required");
 			return false;
 		}
 
 		for(var i = 0; i < user_id.length; ++i) {
 			if(isNaN(user_id[i])) {
-				alert("Please enter a valid user ID");
+				alert("Please enter a valid user ID\n8 digits are required");
 				return false;
 			}
 		}
 	}	
 	
 	if(cell.length < 10 || cell.length > 10) {
-		alert("Invalid cell number length");
+		alert("Invalid cell number length\n10 digits are required");
 		return false;
 	}	
 
 	for(var j = 0; j < cell.length; ++j) {
 		if(isNaN(cell[j])) {
-			alert("Please enter a valid cell number");
+			alert("Please enter a valid cell number\n10 digits are required");
 			return false;
 		}
+	}
+
+	if(!validateEmail(email)) {
+		alert("Please enter a valid email address\nExample Format: john_doe@example.com");
+		return false;
 	}
 
 	if(isNaN(quota)) {

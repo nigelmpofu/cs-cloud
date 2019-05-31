@@ -55,7 +55,7 @@ class UserForm(forms.ModelForm):
 
 	acc_type = forms.ChoiceField(
 		label="Account Type:",
-		choices=(('', '',), ('U', 'User',), ('A', 'Admin',)),
+		choices=(('U', 'User',), ('A', 'Admin',)),
 		widget=forms.Select(attrs={'class': 'form-control', 'id': 'acc_type', 'required': True}))
 
 	title = forms.ChoiceField(

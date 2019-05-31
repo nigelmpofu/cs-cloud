@@ -12,6 +12,9 @@
 		padding-left: 5px;
 		font-size: 16pt
 	}
+	th {
+		text-align: center;
+	}
 	.accordion .card-header:after {
 		font-family: 'FontAwesome';
 		font-size: 17pt;
@@ -25,7 +28,7 @@
 {% endblock extrahead %}
 {% block context %}
 <div class="container">
-	<div class="shadow p-4 mb-4 bg-white">
+	<div class="shadow p-4 mb-4 bg-white" style="border-radius: 25px;">
 		{% if messages %}
 		{% for message in messages %}
 		<div class="alert alert-{{ message.tags }}"><strong>{{ message|safe }}</strong></div>
@@ -33,7 +36,7 @@
 		{% endfor %}
 		{% endif %}
 		<div id="accordion" class="accordion">
-			<div class="card mb-0">
+			<div class="card mb-0" style="border-radius: 25px;">
 				<div class="card-header collapsed" data-toggle="collapse" href="#collapseOne">
 					<a class="card-title">
 						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">User Registration</p>
@@ -59,7 +62,7 @@
 		</div>
 		<!-- Maintain Users -->
 		<div id="accordion2" class="accordion">
-			<div class="card mb-0">
+			<div class="card mb-0" style="border-radius: 25px;">
 				<div class="card-header collapsed" data-toggle="collapse" href="#collapseTwo">
 					<a class="card-title">
 						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">Maintain Users</p>
@@ -77,8 +80,8 @@
 									<th>Surname</th>
 									<th>Email</th>
 									<th style="display: none;">Cellphone</th>
-									<th>Admin Account</th>
-									<th>Disk Quota (MiB)</th>
+									<th>Admin</th>
+									<th>Disk Usage (MiB)</th>
 									<th style="display: none;">Disk Quota</th>
 									<th>Edit</th>
 									<th>Delete</th>
@@ -95,21 +98,19 @@
 									<td data-id="surname">{{ user.surname }}</td>
 									<td data-id="email">{{ user.email }}</td>
 									<td data-id="cell" style="display: none;">{{ user.cell }}</td>
-									<td data-id="acc_type">{{ user.is_staff }}</td>
-									<td data-id="spaceUsed">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}</td>
+									<td data-id="acc_type" style="text-align: center;"><i class="fa {% if user.is_staff %}fa-check{%else%}fa-times{%endif%}" style="font-size: 16pt;"></i></td>
+									<td data-id="spaceUsed" data-sort="{{user.used_quota}}" style="text-align: center;">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}<br/>({{user.used_quota|div:user.disk_quota|mul:100}}%)</td>
 									<td data-id="quota" style="display: none;">{{ user.disk_quota|div:1048576 }}</td>
-									<td>
-										<button type="button" name="edit" class='btn btn-primary btn-xs rounded-circle'
+									<td style="text-align: center;">
+										<button type="button" name="edit" class='btn btn-primary btn-xs rounded-circle edit'
 												data-toggle="modal" data-target="#editModal"
 												data-csrf='{{ csrf_token }}' data-id="{{ user.user_id }}"
 												data-pk="{{ user.pk }}"><i class="fa fa-pencil" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Edit {{ user.user_id }}"></i></button>
 									</td>
-									<td>
-										<form>
-											<button type="button" class="btn btn-danger btn-xs rounded-circle" href="/userAdmin/userProfile/{{ user.pk }}"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></button>
-										</form>
+									<td style="text-align: center;">							
+										<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteUser('{{ user.user_id}}')"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></button>
 									</td>
-									<td>
+									<td style="text-align: center;">
 										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
 											   data-pk="{{ user.pk }}" data-toggle="tooltip" title="Delete {{ user.user_id }}?">
 									</td>
@@ -184,23 +185,51 @@
 			timeout: 3000 // 3 Second timeout
 		});
 	}
+	function deleteUser(userId) {
+		var toDelete = [];
+		var token = "{{csrf_token}}";
+		if(userId === "{{user.user_id}}") {
+			alert("Warning: You cannot delete your own account");
+		} else {
+			toDelete.push(userId);
+		}
+		if(toDelete.length > 0) {
+			toDeleteMessage = "Are you sure you want to delete the following account:\n\n" + userId;
+			if(confirm(toDeleteMessage)) {
+				var data = {
+					'toDelete': toDelete,
+					'csrfmiddlewaretoken': token
+				};
+				$.ajax({
+					type: 'POST',
+					url: "{% url 'adminDeleteUser' %}",
+					data: data,
+					success: function() {
+						$.each(toDelete, function(index, value) {
+							$("#users > tbody > tr#user_id-" + value).fadeOut(500);
+						});
+					}
+				});
+			}
+		}
+	}
 	$(document).ready(function() {
 		$('[data-toggle="tooltip"]').tooltip();
 		const table = $("#users").DataTable({
 			"columns": [
-				{ "orderable": true, "searchable": true },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": true },
-				{ "orderable": false, "searchable": true },
-				{ "orderable": true, "searchable": true },
-				{ "orderable": false, "searchable": true },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false },
-				{ "orderable": false, "searchable": false }
+				{ "orderable": true, "searchable": true }, // user_id
+				{ "orderable": false, "searchable": false }, // title
+				{ "orderable": false, "searchable": true }, // initials
+				{ "orderable": false, "searchable": true }, // first name (hidden)
+				{ "orderable": true, "searchable": true }, // surname
+				{ "orderable": false, "searchable": true }, // email
+				{ "orderable": false, "searchable": false }, // cell (hidden)
+				{ "orderable": false, "searchable": false }, // account type
+				{ "orderable": true, "searchable": false }, // storage used (sort by used space)
+				{ "orderable": false, "searchable": false }, // disk quota (hidden)
+				{ "orderable": false, "searchable": false }, // edit button
+				{ "orderable": false, "searchable": false }, // delete button
+				{ "orderable": false, "searchable": false } // delete checkbox
 			],
 			"initComplete": function () {
 				// Hook update user buttons
@@ -211,12 +240,19 @@
 	$("#remove").on("click", function () {
 		var toDelete = [];
 		var token = $(this).data("csrf");
+		var deleteSelf = false;
 		$("input:checked.multiRemove").each(function() {
 			if (this.checked) {
-				toDelete.push({
-					"id": $(this).data("id"),
-					"pk": $(this).data("pk")
-				});
+				if($("#remove").data("id") != $(this).data("id")) {
+					// Cannot delete myself
+					toDelete.push({
+						"id": $(this).data("id"),
+						"pk": $(this).data("pk")
+					});	
+				} else {
+					this.checked = false; // Uncheck self
+					deleteSelf = true;
+				}
 			}
 		});
 		var toDeleteMessage = "Are you sure you want to delete these users:\n";
@@ -225,6 +261,9 @@
 			toDeleteMessage += value.id + "\n";
 			toDeleteList.push(value.pk);
 		});
+		if(deleteSelf) {
+			toDeleteMessage += "\nWarning: You cannot delete your own account";
+		}
 		if(toDeleteList.length > 0) {
 			if(confirm(toDeleteMessage)) {
 				var data = {
@@ -248,7 +287,11 @@
 				});
 			}
 		} else {
-			alert("Please select at least one user account to delete");
+			var deleteWarningMessage = "Please select at least one user account to delete";
+			if(deleteSelf) {
+				deleteWarningMessage += "\n\nWarning: You cannot delete your own account";
+			}
+			alert(deleteWarningMessage);
 		}
 	});
 </script>

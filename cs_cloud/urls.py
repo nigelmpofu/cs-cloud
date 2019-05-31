@@ -30,6 +30,7 @@ urlpatterns = [
 	path('auth/resetPassword/<str:user_id>/<slug:token>/', views.reset_password_token, name="resetPasswordToken"),
 	
 	# Admin URL
+	path('admin/diskUsage/', adminViews.disk_usage, name="diskUsage"),
 	path('admin/userAdmin/', adminViews.user_admin, name="userAdmin"),
 	path('admin/userAdmin/submitUser/', adminViews.submit_user, name="submitUser"),
 	path('admin/userAdmin/checkUser/', adminViews.check_user, name="checkUser"),
