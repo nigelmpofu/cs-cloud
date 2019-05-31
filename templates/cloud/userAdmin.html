@@ -164,11 +164,16 @@
 				'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').prop('value')},
 			dataType: "json",
 			success: function (data) {
-				if (data.result === 0) { // Available
+				if(data.result === 0) { // Available
 					$("#" + id).attr("style", "background-color: #387C44; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");
 					$("#" + id).attr("title", "Available");
 					$("#availStat-" + id).text("true");
+				} else if(data.result === 2) {
+					$("#" + id).attr("style", "background-color: #F2A814; color: white");
+					$("#" + id).attr("data-toggle", "tooltip");
+					$("#" + id).attr("title", "Invalid email address");
+					$("#availStat-" + id).text("false");
 				} else {
 					$("#" + id).attr("style", "background-color: #C04000; color: white");
 					$("#" + id).attr("data-toggle", "tooltip");

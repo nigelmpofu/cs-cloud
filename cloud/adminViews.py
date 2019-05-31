@@ -1,3 +1,5 @@
+import os
+import re
 from smtplib import SMTPException
 from django.conf import settings
 from django.contrib import messages
@@ -21,6 +23,20 @@ def user_admin(request):
 
 @admin_required
 def admin_files(request):
+	"""
+	Create admin user directory if account created with 
+		python3 manage.py createsuperuser
+	as the user directory might not have been created
+	"""
+	user_directory = settings.MEDIA_ROOT + "/" + request.user.user_id
+	if not os.path.exists(user_directory):
+		try:
+			os.mkdir(user_directory)
+		except OSError:
+			messages.error(request, "Error accessing your data.<br/>Contact admin")
+			logout(request)
+			return redirect("index")
+				
 	return HttpResponse("Admin Files")
 
 
@@ -29,13 +45,22 @@ def disk_usage(request):
 	return HttpResponse("Disk Usage")
 
 
-def create_new_user(user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
+def create_new_user(request, user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
 	random_password = User.objects.make_random_password(9) # Random password 9 characters long
 	user = User.objects.create_user(title=user_title, initials=user_initials, name=user_name, surname=user_surname,
 									cell=user_cell, email=user_email, user_id=user_id, OTP=True, is_staff=user_admin,
 									disk_quota=user_quota, password=random_password)
 
 	if user:
+		user_directory = settings.MEDIA_ROOT + "/" + user.user_id
+		if not os.path.exists(user_directory):
+			try:
+				os.mkdir(user_directory)
+			except OSError:
+				# User Directory could not be create
+				messages.error(request, "User directory could not be created")
+				user.delete()
+				return None
 		user_token = tokenizer.make_token(user) # Create password reset token
 		send_password_request_email(user_token, user_id, user_email, user_name, user_surname, True, random_password)
 		user.save()
@@ -73,7 +98,7 @@ def submit_user(request):
 				return redirect("userAdmin")
 
 			try:
-				user = create_new_user(post_user_id, post_title, post_initials, post_name, post_surname, post_cell,
+				user = create_new_user(request, post_user_id, post_title, post_initials, post_name, post_surname, post_cell,
 										post_email, post_is_admin, post_quota)
 				if not user:
 					messages.error(request, "Error: User account could not be created")
@@ -98,6 +123,11 @@ def check_user(request):
 		data = 'ui' for user_id
 		data = 'em' for email
 		everything else is an error
+
+		Return
+		0 - Available
+		1 - Not Available
+		2 - Email not valid
 		"""
 		search_data = request.POST.get("data", "")
 		search_query = request.POST.get("query", None)
@@ -110,7 +140,12 @@ def check_user(request):
 			if User.objects.filter(email=search_query).exists():
 				return JsonResponse({'result': 1})
 			else:
-				return JsonResponse({'result': 0})
+				# Check if email valid
+				if re.match("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$", search_query) != None:
+					return JsonResponse({'result': 0})
+				else:
+					# Email not valid
+					return JsonResponse({'result': 2})
 		else:
 			# Request error
 			return JsonResponse({'result': -1})
