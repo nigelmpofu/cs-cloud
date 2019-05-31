@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from smtplib import SMTPException
 from django.conf import settings
 from django.contrib import messages
@@ -209,6 +210,12 @@ def users_delete(request):
 			if user == request.user:
 				# Cannot delete yourself
 				continue
+			user_directory = settings.MEDIA_ROOT + "/" + user.user_id
+			try:
+				# Possible Improvements: Better error handling and reporting
+				shutil.rmtree(user_directory, ignore_errors=True) # Delete ALL user data
+			except Exception as ex:
+				pass
 			user.delete()
 		# Deletion complete
 		return HttpResponse()

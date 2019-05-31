@@ -24,6 +24,9 @@
 	.accordion .card-header.collapsed:after {
 		content: "\f067"
 	}
+	#remove {
+		color: white;
+	}
 </style>
 {% endblock extrahead %}
 {% block context %}
@@ -119,7 +122,7 @@
 							</tbody>
 						</table><br/>
 						<button type="button" name="remove" id="remove" class='btn btn-warning pull-left' data-csrf="{{csrf_token}}"
-								data-id="{{ user.user_id }}" data-pk="{{ user.pk }}">Delete Users</button>
+								data-id="{{ user.user_id }}" data-pk="{{ user.pk }}">Delete Selected Users</button>
 					</div>
 				</div>
 			</div>
