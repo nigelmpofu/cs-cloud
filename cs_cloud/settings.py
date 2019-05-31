@@ -126,6 +126,12 @@ STATICFILES_DIRS = (
 	os.path.join(BASE_DIR, "static"),
 )
 
+# Absolute filesystem path to the directory that will hold user-uploaded files.
+# where all user data will be stored
+# May be changed to alternative location for more storage
+MEDIA_ROOT = os.path.join(BASE_DIR, "data")
+
+
 """
 Default disk quota assigned to each new user
 Units: Bytes (Base 2 - 1 kiB = 1024 bytes)
