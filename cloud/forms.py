@@ -109,4 +109,4 @@ class MkdirForm(forms.Form):
 		label="Directory Name",
 		max_length = 16,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'dir_name', 'placeholder': 'Directory Name', 'autocomplete': 'off'}))
-
+	dir_path = forms.CharField(widget=forms.HiddenInput(), required=True)

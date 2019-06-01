@@ -40,10 +40,10 @@ class FileManager(object):
 	def update_path(self, path):
 		if path is None or len(path) == 0:
 			self.path = ''
-			self.abspath = self.user_directory
+			self.abspath = self.user_storage.path(self.user_directory)
 		else:
 			self.path = self.clean_path(path)
-			self.abspath = os.path.join(self.user_directory, self.path)			
+			self.abspath = os.path.join(self.user_storage.path(self.user_directory), self.path)			
 		self.location = self.abspath
 		self.url = os.path.join(settings.MEDIA_URL, self.path)
 
@@ -59,7 +59,7 @@ class FileManager(object):
 
 	def get_breadcrumbs(self):
 		breadcrumbs = [{
-			'label': 'Filemanager',
+			'label': 'File Manager / ',
 			'path': '',
 		}]
 
@@ -69,13 +69,13 @@ class FileManager(object):
 		for part in parts:
 			path = os.path.join(path, part)
 			breadcrumbs.append({
-				'label': part,
+				'label': ' ' + part + ' / ',
 				'path': path,
 			})
 
 		return breadcrumbs
 
-	def patch_context_data(self, context):
+	def update_context_data(self, context):
 		context.update({
 			'path': self.path,
 			'breadcrumbs': self.get_breadcrumbs(),
@@ -87,7 +87,7 @@ class FileManager(object):
 			'directory': os.path.dirname(self.path),
 			'filepath': self.path,
 			'filename': filename,
-			'filesize': file_size_formatted(STORAGE.size(self.location)),
+			'filesize': file_size_formatted(self.user_storage.size(self.location)),
 			'filedate': self.user_storage.get_modified_time(self.location),
 			'fileurl': self.url,
 		}
@@ -130,10 +130,11 @@ class FileManager(object):
 		signals.filemanager_post_upload.send(sender=self.__class__, filename=filename, path=self.path, filepath=filepath)
 		return filename
 
+
 	def download_file(self, filename):
 		download_path = ''
 		try:
-			download_path = os.path.join(self.user_directory, filename)
+			download_path = os.path.join(self.user_storage.path(self.user_directory), filename)
 		except Exception:
 			return HttpResponseNotFound("File not found")
 		file_wrapper = FileWrapper(open(download_path,'rb'))
@@ -141,10 +142,10 @@ class FileManager(object):
 		response = HttpResponse(file_wrapper, content_type=file_mimetype)
 		response['X-Sendfile'] = download_path
 		response['Content-Length'] = self.user_storage.size(download_path)
-		response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(filename)
+		# Extract filename only
+		response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(os.path.split(filename)[1])
 		return response
-		
-		
+
 
 	def create_directory(self, dir_name):
 		"""
@@ -153,13 +154,13 @@ class FileManager(object):
 		empty temp file then delete the temp file leaving behind
 		the empty new directory
 		"""
-		if os.path.exists(self.user_storage.path(dir_name)):
+		new_directory = os.path.join(self.location, dir_name)
+		if os.path.exists(self.user_storage.path(new_directory)):
 			# Directory already exists
 			return False
 		else:
-			user_path = self.user_storage.get_valid_name(dir_name)
-			temp_file = os.path.join(user_path, '.tmp')
-			print(os.path.exists(self.user_storage.path(dir_name)))
+			new_path = self.user_storage.path(new_directory)
+			temp_file = os.path.join(new_path, '.tmp')			
 			self.user_storage.save(temp_file, ContentFile(''))
 			self.user_storage.delete(temp_file)
 			return True

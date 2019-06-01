@@ -15,17 +15,17 @@
 	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
 		<div class="card-header" style="border-radius: 16px;"><h4>My Files<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span></h4>
 		</div>
-		<!--<ul class="breadcrumb">
+		<ul class="breadcrumb">
 			{% for breadcrumb in breadcrumbs %}
 			<li>
 				{% if forloop.last %}
 				{{breadcrumb.label}}
 				{% else %}
-				<a href="{% url 'fileBrowswer' %}?f={{breadcrumb.path}}{% if popup %}&amp;popup=1{% endif %}">{{breadcrumb.label}}</a>
+				<a href="{% url 'fileExplorer' %}?p={{breadcrumb.path}}">{{breadcrumb.label}}</a>
 				{% endif %}
 			</li>
 			{% endfor %}
-		</ul>-->
+		</ul>
 		<table class="table">
 			<thead>
 				<tr>
@@ -42,7 +42,7 @@
 				<tr>
 					<td>{{file.filetype}}</td>
 					{% if file.filetype == "directory" %}
-					<td><a href="?path={{file.filepath}}">{{file.filename}}</a></td>
+					<td><a href="?p={{file.filepath}}">{{file.filename}}</a></td>
 					{% else %}
 					<td>{{file.filename}}</td>
 					{% endif %}
@@ -53,7 +53,7 @@
 					{% else %}
 					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
 					{% endif %}
-					<td><a href="{% url 'fileDetails' %}?path={{file.filepath}}">Details</a></td>
+					<td><a href="{% url 'fileDetails' %}?p={{file.filepath}}">Details</a></td>
 				</tr>
 				{% empty %}
 				<tr>

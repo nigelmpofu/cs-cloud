@@ -27,7 +27,12 @@ def file_explorer(request):
 			logout(request)
 			return redirect("index")
 	fm = FileManager(request.user)
-	context = {'files': fm.directory_list(), 'uploadForm': UploadForm(), 'mkdirForm': MkdirForm()}
+	mkdir_form = MkdirForm()
+	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
+		fm.update_path(dict(request.GET)['p'][0])
+		mkdir_form.initial['dir_path'] = dict(request.GET)['p'][0]
+	context = {'files': fm.directory_list(), 'uploadForm': UploadForm(), 'mkdirForm': mkdir_form}
+	fm.update_context_data(context)
 	return render(request, 'cloud/fileManager.html', context)
 
 
@@ -49,10 +54,10 @@ def file_upload(request):
 			for f in user_files:
 				# Do something with each file.
 				print(f)
-			messages.success(request, "Files uploaded successfully")
+			# messages.success(request, "Files uploaded successfully")
 			return JsonResponse({'result': 0})
 		else:
-			messages.error(request, "Files could not be uploaded")
+			# messages.error(request, "Files could not be uploaded")
 			return JsonResponse({'result': 1})		
 	else:
 		# No get allowed
@@ -64,6 +69,8 @@ def create_directory(request):
 		mkdir_form.full_clean()
 		if mkdir_form.is_valid():
 			fm = FileManager(request.user)
+			fm.update_path(mkdir_form.cleaned_data['dir_path'])
+			print(mkdir_form.cleaned_data['dir_path'])
 			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
 			if mkdir_status:
 				return JsonResponse({'result': 0})
