@@ -68,3 +68,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 		"""Returns the remaining available quota."""
 		return self.disk_quota - self.used_quota
 
+
+def get_user_directory(instance, filename):
+	# File stored in data/<user_id>/file
+	return '{0}/{1}'.format(instance.user.user_id, filename)
+
+
+class UserData(models.Model):
+	owner = models.ForeignKey(User, on_delete=models.CASCADE)
+	data = models.FileField(upload_to=get_user_directory)
+	uploaded = models.DateTimeField(auto_now_add=True)
+
+	@property
+	def filename(self):
+		fname = self.data.name.split("/")[1].replace('_',' ').replace('-',' ')
+		return fname

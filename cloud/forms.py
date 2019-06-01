@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import SetPasswordForm
 
-from cloud.models import User
+from cloud.models import User, UserData
 
 class LoginForm(forms.Form):
 	username = forms.Field(widget=forms.TextInput(attrs={'class': 'form-control',
@@ -41,6 +41,7 @@ class ResetForm(forms.Form):
 		label="Username:",
 		max_length=16,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'user_id', 'required': True, 'autofocus': True}))
+
 
 class UserForm(forms.ModelForm):
 	class Meta:
@@ -94,3 +95,10 @@ class UserForm(forms.ModelForm):
 		max_length = 8,
 		widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'quota', 'value': 100, 'required': True})) # Default 100 MB
 
+
+class UploadForm(forms.Form):
+	class Meta:
+		model = UserData
+		fields = ['user_files']
+
+	user_files = forms.FileField(label='Select files to upload:', widget=forms.ClearableFileInput(attrs={'multiple': True}))

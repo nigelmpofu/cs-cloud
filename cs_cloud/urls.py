@@ -43,6 +43,6 @@ urlpatterns = [
 	path('file/', userViews.file_browser, name="fileBrowser"),
 	path('file/details/', userViews.file_browser, name="fileDetails"),
 	path('file/download', userViews.file_download, name="fileDownload"),
-	path('file/upload/', userViews.file_browser, name="fileUpload"),
+	path('file/upload/', userViews.file_upload, name="fileUpload"),
 	path('file/mkdir/', userViews.file_browser, name="createDirectory"),
 ]

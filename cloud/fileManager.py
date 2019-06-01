@@ -108,7 +108,7 @@ class FileManager(object):
 			}
 
 		for directoryname in directories:
-			listing.append(_helper(directoryname, 'Directory'))
+			listing.append(_helper(directoryname, 'directory'))
 
 		mimetypes.init()
 		for filename in files:
@@ -140,7 +140,7 @@ class FileManager(object):
 		file_mimetype = mimetypes.guess_type(download_path)[0]
 		response = HttpResponse(file_wrapper, content_type=file_mimetype)
 		response['X-Sendfile'] = download_path
-		response['Content-Length'] = os.stat(download_path).st_size
+		response['Content-Length'] = self.user_storage.size(download_path)
 		response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(filename)
 		return response
 		

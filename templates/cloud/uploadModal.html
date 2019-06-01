@@ -1,0 +1,78 @@
+{% load staticfiles %}
+<div class="modal fade" id="uploadModal" role="dialog" tabindex="-1" aria-labelledby="FileUpload" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title" id="modalTitle">File Upload</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<form action="{% url 'fileUpload' %}" method="post" enctype="multipart/form-data" id="uploadForm">
+					{%csrf_token%}
+					{{uploadForm}}
+					<div class="fileloader">
+						<progress id="uploadBar" value="0" max="100" style="width:300px;"></progress>
+						<h3 id="status"></h3>
+						<p id="loaded_n_total"></p>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-success" id="uploadBtn">Upload</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$("#uploadBtn").click(function() {
+		$("#uploadForm").submit();
+		//uploadFile();
+	});
+	$(function() {
+			var bar = $('#uploadBar');
+		    var percent = $('#loaded_n_total');
+		    var status = $('#status');
+			$("#uploadForm").ajaxForm({
+				url: '{% url 'fileUpload' %}',
+				type: 'post',
+		        beforeSend: function() {
+		            status.empty();
+		            var percentVal = '0';
+		            bar.value = parseInt(percentVal);
+		            percent.html(percentVal + "%");
+		        },
+		        uploadProgress: function(event, position, total, percentComplete) {
+		            var percentVal = percentComplete;
+		            bar.value = parseInt(percentVal);
+		            percent.html(percentVal + "%");
+		        },
+		        complete: function(xhr) {
+		            status.html(xhr.responseText);
+		        }
+			});
+		});
+	
+
+
+
+function progressHandler(event) {
+  _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
+  var percent = (event.loaded / event.total) * 100;
+  _("progressBar").value = Math.round(percent);
+  _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
+}
+
+function completeHandler(event) {
+  _("status").innerHTML = event.target.responseText;
+  _("progressBar").value = 0;
+}
+
+function errorHandler(event) {
+  _("status").innerHTML = "Upload Failed";
+}
+
+function abortHandler(event) {
+  _("status").innerHTML = "Upload Aborted";
+}
+</script>
