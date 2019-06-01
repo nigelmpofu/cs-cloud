@@ -10,16 +10,15 @@
 				<form action="{% url 'fileUpload' %}" method="post" enctype="multipart/form-data" id="uploadForm">
 					{%csrf_token%}
 					{{uploadForm}}
-					<div class="fileloader">
-						<progress id="uploadBar" value="0" max="100" style="width:300px;"></progress>
-						<h3 id="status"></h3>
-						<p id="loaded_n_total"></p>
+					<div class="fileloader" style="padding-top: 24px;">
+						<div class=" progress progress-bar bg-primary" id="uploadBar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; display: none;"></div>
+						<h3 id="uploadStatus"></h3>
 					</div>
 				</form>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-success" id="uploadBtn">Upload</button>
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
 			</div>
 		</div>
 	</div>
@@ -27,52 +26,66 @@
 <script type="text/javascript">
 	$("#uploadBtn").click(function() {
 		$("#uploadForm").submit();
-		//uploadFile();
+	});
+	$("#{{uploadForm.user_files.auto_id}}").change(function() {
+		$("#uploadStatus").empty();
+	});
+	$("#uploadModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#{{uploadForm.user_files.auto_id}}").val("");
+		$("#uploadStatus").empty();
+		$("#closeBtn").attr("disabled", false);
+		$("#uploadBtn").attr("disabled", false);
+		$("#uploadBar").attr("style", "display: none; width: 0%");
 	});
 	$(function() {
-			var bar = $('#uploadBar');
-		    var percent = $('#loaded_n_total');
-		    var status = $('#status');
+			var loadBar = $('#uploadBar');
+			var uploadBtn = $("#uploadBtn");
+			var uploadStatus = $('#uploadStatus');
 			$("#uploadForm").ajaxForm({
 				url: '{% url 'fileUpload' %}',
 				type: 'post',
-		        beforeSend: function() {
-		            status.empty();
-		            var percentVal = '0';
-		            bar.value = parseInt(percentVal);
-		            percent.html(percentVal + "%");
-		        },
-		        uploadProgress: function(event, position, total, percentComplete) {
-		            var percentVal = percentComplete;
-		            bar.value = parseInt(percentVal);
-		            percent.html(percentVal + "%");
-		        },
-		        complete: function(xhr) {
-		            status.html(xhr.responseText);
-		        }
+				beforeSend: function(xhr) {
+					if($("#{{uploadForm.user_files.auto_id}}").val() == '') {
+						uploadStatus.empty();
+						uploadStatus.html("Select file to upload");
+						xhr.abort();
+						return false; // Abort send
+					} else {
+						uploadStatus.empty();
+						loadBar.attr("aria-valuenow", 0);
+						loadBar.attr("style", "width: 0%");
+						loadBar.html("0%");
+						uploadBtn.attr("disabled", true);
+						return true; // Send
+					}
+				},
+				uploadProgress: function(event, position, total, percentComplete) {
+					loadBar.attr("aria-valuenow", parseInt(Math.round(percentComplete)));
+					loadBar.attr("style", "width: " + Math.round(percentComplete) + "%");
+					loadBar.html(Math.round(percentComplete) + "%");
+				},
+				complete: function(data) {
+					var jsonResponse = JSON.parse(data.responseText);
+					if(jsonResponse.result === 0) {
+						uploadStatus.html("Upload Complete")
+					} else {
+						uploadStatus.html("Upload Failed");
+					}
+					loadBar.attr("style", "display: none; width: 0%");
+					loadBar.empty();
+					uploadBtn.attr("disabled", false);
+				},
+				failure: function() {
+					loadBar.attr("style", "display: none; width: 0%");
+					uploadStatus.html("Upload Failed");
+					uploadBtn.attr("disabled", false);
+				},
+				error: function() {
+					loadBar.attr("style", "display: none; width: 0%");
+					uploadStatus.html("Upload Error");
+					uploadBtn.attr("disabled", false);
+				}
 			});
 		});
-	
-
-
-
-function progressHandler(event) {
-  _("loaded_n_total").innerHTML = "Uploaded " + event.loaded + " bytes of " + event.total;
-  var percent = (event.loaded / event.total) * 100;
-  _("progressBar").value = Math.round(percent);
-  _("status").innerHTML = Math.round(percent) + "% uploaded... please wait";
-}
-
-function completeHandler(event) {
-  _("status").innerHTML = event.target.responseText;
-  _("progressBar").value = 0;
-}
-
-function errorHandler(event) {
-  _("status").innerHTML = "Upload Failed";
-}
-
-function abortHandler(event) {
-  _("status").innerHTML = "Upload Aborted";
-}
 </script>
