@@ -96,9 +96,17 @@ class UserForm(forms.ModelForm):
 		widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'quota', 'value': 100, 'required': True})) # Default 100 MB
 
 
-class UploadForm(forms.Form):
+class UploadForm(forms.ModelForm):
 	class Meta:
 		model = UserData
 		fields = ['user_files']
 
 	user_files = forms.FileField(label='Select files to upload:', widget=forms.ClearableFileInput(attrs={'multiple': True}))
+
+
+class MkdirForm(forms.Form):
+	dir_name = forms.CharField(
+		label="Directory Name",
+		max_length = 16,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'dir_name', 'placeholder': 'Directory Name', 'autocomplete': 'off'}))
+

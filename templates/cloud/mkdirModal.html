@@ -1,0 +1,76 @@
+{% load staticfiles %}
+<div class="modal fade" id="mkdirModal" role="dialog" tabindex="-1" aria-labelledby="CreateDirectory" aria-hidden="true">
+	<div class="modal-dialog" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title" id="modalTitle">Create New Directory</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<form action="{% url 'createDirectory' %}" method="post" id="mkdirForm">
+					{%csrf_token%}
+					{{mkdirForm}}
+					<div class="infosection" style="padding-top: 24px;">						
+						<h3 id="mkdirStatus"></h3>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-success" id="createBtn">Create</button>
+				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$("#createBtn").click(function() {
+		$("#mkdirForm").submit();
+	});
+	$("#dir_name").change(function() {
+		$("#mkdirStatus").empty();
+	});
+	$('#mkdirModal').on("shown.bs.modal", function() {
+		$("#dir_name").focus();
+	});
+	$("#mkdirModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#dir_name").val("");
+		$("#mkdirStatus").empty();
+		window.location.reload();
+	});
+	$(function() {
+			var createStatus = $('#mkdirStatus');
+			$("#mkdirForm").ajaxForm({
+				url: '{% url 'createDirectory' %}',
+				type: 'post',
+				beforeSend: function(xhr) {
+					if($("#dir_name").val() == '') {
+						createStatus.empty();
+						createStatus.html("Directory Name Required");
+						$("#dir_name").focus();
+						xhr.abort();
+						return false; // Abort send
+					} else {
+						createStatus.empty();						
+						return true; // Send
+					}
+				},
+				complete: function(data) {
+					var jsonResponse = JSON.parse(data.responseText);
+					if(jsonResponse.result === 0) {
+						createStatus.html("Directory Created Successfully");
+						// Close modal after 1.2 sec
+						setTimeout(function() {$('#mkdirModal').modal('hide');}, 1200);
+					} else {
+						uploadStatus.html("Directory Creation Failed");
+					}					
+				},
+				failure: function() {					
+					createStatus.html("Directory Creation Failed");					
+				},
+				error: function() {					
+					createStatus.html("Directory Creation Error");					
+				}
+			});
+		});
+</script>

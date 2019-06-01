@@ -6,7 +6,7 @@ from cloud.decorators.userRequired import user_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
-from .forms import LoginForm, RecoverPasswordForm, ResetForm, UploadForm
+from .forms import LoginForm, MkdirForm, RecoverPasswordForm, ResetForm, UploadForm
 from .mailer import send_password_request_email
 from .models import User
 from .fileManager import FileManager
@@ -28,7 +28,9 @@ def file_explorer(request):
 			return redirect("index")
 	fm = FileManager(request.user)
 	upload_form = UploadForm()
-	context = {'files': fm.directory_list(), 'uploadForm': upload_form}
+	mkdir_form = MkdirForm()
+	print(mkdir_form)
+	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form}
 	return render(request, 'cloud/fileManager.html', context)
 
 
@@ -58,3 +60,10 @@ def file_upload(request):
 	else:
 		# No get allowed
 		return HttpResponseForbidden("Upload Rejected")
+
+def create_directory(request):
+	if request.method == 'POST':
+		return JsonResponse({'result': 0})
+	else:
+		# No get allowed
+		return HttpResponseForbidden("Invalid Request")

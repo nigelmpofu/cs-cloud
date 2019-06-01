@@ -37,6 +37,7 @@
 		$("#closeBtn").attr("disabled", false);
 		$("#uploadBtn").attr("disabled", false);
 		$("#uploadBar").attr("style", "display: none; width: 0%");
+		window.location.reload();
 	});
 	$(function() {
 			var loadBar = $('#uploadBar');
@@ -68,7 +69,9 @@
 				complete: function(data) {
 					var jsonResponse = JSON.parse(data.responseText);
 					if(jsonResponse.result === 0) {
-						uploadStatus.html("Upload Complete")
+						uploadStatus.html("Upload Complete");
+						// Close modal after 2.0 sec
+						setTimeout(function() {$('#uploadModal').modal('hide');}, 2000);
 					} else {
 						uploadStatus.html("Upload Failed");
 					}

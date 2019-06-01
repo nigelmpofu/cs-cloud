@@ -13,12 +13,7 @@
 {% block context %}
 <div class="cscbrowser">
 	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
-		<div class="card-header" style="border-radius: 16px;"><h4>My Files<i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="modal" data-target="#uploadModal"></i></h4>
-
-				<!-- TODO: Upload Modal -->
-			  <!--<a href="{% url 'createDirectory' %}?path={{path}}{% if popup %}&amp;popup=1{% endif %}" class="btn btn-default">Create directory</a>
-			  <a href="{% url 'fileUpload' %}?path={{path}}{% if popup %}&amp;popup=1{% endif %}" class="btn btn-default">Upload</a>
-			</div>-->
+		<div class="card-header" style="border-radius: 16px;"><h4>My Files<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span></h4>
 		</div>
 		<!--<ul class="breadcrumb">
 			{% for breadcrumb in breadcrumbs %}
@@ -70,6 +65,7 @@
 	</div>
 </div>
 {% include "cloud/uploadModal.html" %}
+{% include "cloud/mkdirModal.html" %}
 <script type="text/javascript">
 	$(document).ready(function() {
 		$('[data-toggle="tooltip"]').tooltip();
