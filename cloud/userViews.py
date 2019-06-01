@@ -27,10 +27,7 @@ def file_explorer(request):
 			logout(request)
 			return redirect("index")
 	fm = FileManager(request.user)
-	upload_form = UploadForm()
-	mkdir_form = MkdirForm()
-	print(mkdir_form)
-	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form}
+	context = {'files': fm.directory_list(), 'uploadForm': UploadForm(), 'mkdirForm': MkdirForm()}
 	return render(request, 'cloud/fileManager.html', context)
 
 
@@ -63,7 +60,17 @@ def file_upload(request):
 
 def create_directory(request):
 	if request.method == 'POST':
-		return JsonResponse({'result': 0})
+		mkdir_form = MkdirForm(request.POST)
+		mkdir_form.full_clean()
+		if mkdir_form.is_valid():
+			fm = FileManager(request.user)
+			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
+			if mkdir_status:
+				return JsonResponse({'result': 0})
+			else:
+				return JsonResponse({'result': 2})
+		else:
+			return JsonResponse({'result': 1})
 	else:
 		# No get allowed
 		return HttpResponseForbidden("Invalid Request")

@@ -10,7 +10,7 @@
 				<form action="{% url 'createDirectory' %}" method="post" id="mkdirForm">
 					{%csrf_token%}
 					{{mkdirForm}}
-					<div class="infosection" style="padding-top: 24px;">						
+					<div class="infosection" style="padding-top: 24px;">
 						<h3 id="mkdirStatus"></h3>
 					</div>
 				</form>
@@ -26,7 +26,7 @@
 	$("#createBtn").click(function() {
 		$("#mkdirForm").submit();
 	});
-	$("#dir_name").change(function() {
+	$("#dir_name").on('input',function(e) {
 		$("#mkdirStatus").empty();
 	});
 	$('#mkdirModal').on("shown.bs.modal", function() {
@@ -51,7 +51,7 @@
 						xhr.abort();
 						return false; // Abort send
 					} else {
-						createStatus.empty();						
+						createStatus.empty();
 						return true; // Send
 					}
 				},
@@ -61,15 +61,18 @@
 						createStatus.html("Directory Created Successfully");
 						// Close modal after 1.2 sec
 						setTimeout(function() {$('#mkdirModal').modal('hide');}, 1200);
+					} else if(jsonResponse.result === 2) {
+						createStatus.html("Directory Already Exists");
+						$("#dir_name").select();
 					} else {
-						uploadStatus.html("Directory Creation Failed");
-					}					
+						createStatus.html("Directory Creation Failed");
+					}
 				},
-				failure: function() {					
-					createStatus.html("Directory Creation Failed");					
+				failure: function() {
+					createStatus.html("Directory Creation Failed");
 				},
-				error: function() {					
-					createStatus.html("Directory Creation Error");					
+				error: function() {
+					createStatus.html("Directory Creation Error");
 				}
 			});
 		});

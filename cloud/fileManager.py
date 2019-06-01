@@ -146,11 +146,20 @@ class FileManager(object):
 		
 		
 
-	def create_directory(self, name):
-		name = STORAGE.get_valid_name(name)
-		tmpfile = os.path.join(name, '.tmp')
-
-		path = os.path.join(self.path, tmpfile)
-
-		self.user_storage.save(path, ContentFile(''))
-		self.user_storage.delete(path)
+	def create_directory(self, dir_name):
+		"""
+		Create directory by creating temp file in the directory
+		FileStorageAPI will create the directory while saving the 
+		empty temp file then delete the temp file leaving behind
+		the empty new directory
+		"""
+		if os.path.exists(self.user_storage.path(dir_name)):
+			# Directory already exists
+			return False
+		else:
+			user_path = self.user_storage.get_valid_name(dir_name)
+			temp_file = os.path.join(user_path, '.tmp')
+			print(os.path.exists(self.user_storage.path(dir_name)))
+			self.user_storage.save(temp_file, ContentFile(''))
+			self.user_storage.delete(temp_file)
+			return True
