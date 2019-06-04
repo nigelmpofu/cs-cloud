@@ -59,7 +59,7 @@ class FileManager(object):
 
 	def get_breadcrumbs(self):
 		breadcrumbs = [{
-			'label': 'File Manager / ',
+			'label': 'fm-home',
 			'path': '',
 		}]
 
@@ -69,7 +69,7 @@ class FileManager(object):
 		for part in parts:
 			path = os.path.join(path, part)
 			breadcrumbs.append({
-				'label': ' ' + part + ' / ',
+				'label': part,
 				'path': path,
 			})
 

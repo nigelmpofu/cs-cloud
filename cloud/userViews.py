@@ -29,8 +29,9 @@ def file_explorer(request):
 	fm = FileManager(request.user)
 	mkdir_form = MkdirForm()
 	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
-		fm.update_path(dict(request.GET)['p'][0])
-		mkdir_form.initial['dir_path'] = dict(request.GET)['p'][0]
+		new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
+		fm.update_path(new_path)
+		mkdir_form.initial['dir_path'] = new_path
 	context = {'files': fm.directory_list(), 'uploadForm': UploadForm(), 'mkdirForm': mkdir_form}
 	fm.update_context_data(context)
 	return render(request, 'cloud/fileManager.html', context)
