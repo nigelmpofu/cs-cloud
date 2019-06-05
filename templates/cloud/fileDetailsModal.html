@@ -1,0 +1,17 @@
+{% load staticfiles %}
+<div class="modal fade" id="fileDetailsModal" role="dialog" tabindex="-1" aria-labelledby="FileDetails" aria-hidden="true">
+	<div class="modal-dialog" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title" id="modalTitle">Details</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<iframe src="{% url 'fileDetails' %}?p={{file.filepath}}"></iframe>
+			</div>
+			<div class="modal-footer">				
+				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>

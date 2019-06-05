@@ -1,0 +1,36 @@
+{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% block extrahead %}
+	<title>{{ file.filename }} - CS Cloud</title>
+	<style>
+		.cscbrowser {
+			position: absolute;
+			left: 16px;
+			right: 16px;
+		}
+	</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="cscbrowser">
+	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
+		<div class="card-header" style="border-radius: 16px;"><h4>Details: {{ file.filename }}</h4></div>
+		<dl>
+			<dt>Filename</dt>
+			<dd>{{file.filename}}</dd>
+			<dt>Filesize</dt>
+			<dd>{{file.filesize}}</dd>
+			<dt>Filedate</dt>
+			<dd>{{file.filedate}}</dd>
+			<dt>Url</dt>
+			<dd><a href="{{file.fileurl}}">{{file.fileurl}}</a></dd>			
+		</dl>
+
+		<a href="{% url 'fileExplorer' %}?p={{file.directory}}" class="btn btn-default">Back</a>
+	</div>
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
+	});
+</script>
+{% endblock %}

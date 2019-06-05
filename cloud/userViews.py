@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
 from cloud.decorators.userRequired import user_required
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
 from .forms import LoginForm, MkdirForm, RecoverPasswordForm, ResetForm, UploadForm
@@ -28,11 +28,13 @@ def file_explorer(request):
 			return redirect("index")
 	fm = FileManager(request.user)
 	mkdir_form = MkdirForm()
+	upload_form = UploadForm()
 	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 		new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 		fm.update_path(new_path)
 		mkdir_form.initial['dir_path'] = new_path
-	context = {'files': fm.directory_list(), 'uploadForm': UploadForm(), 'mkdirForm': mkdir_form}
+		upload_form.initial['upload_path'] = new_path
+	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form}
 	fm.update_context_data(context)
 	return render(request, 'cloud/fileManager.html', context)
 
@@ -42,9 +44,22 @@ def file_browser(request):
 	return HttpResponse("File: " + request.GET.get("f"))
 
 
+def file_details(request):
+	fm = FileManager(request.user)
+	file_information = {}
+	if 'f' in dict(request.GET) and len(dict(request.GET)['f'][0]) > 0:
+		file_path = dict(request.GET)['f'][0].replace("../", "") # No previous directory browsing
+		file_information = fm.file_details(file_path)
+	else:
+		return HttpResponseNotFound("Missing File")
+	context = {'file': file_information}
+	return render(request, 'cloud/fileDetails.html', context)
+
+
 def file_download(request):
 	fm = FileManager(request.user)
 	return fm.download_file(request.GET.get("file"))
+
 
 def file_upload(request):
 	if request.method == 'POST':
@@ -52,17 +67,26 @@ def file_upload(request):
 		upload_form.full_clean()
 		user_files = request.FILES.getlist('user_files')
 		if upload_form.is_valid():
-			for f in user_files:
-				# Do something with each file.
-				print(f)
+			fm = FileManager(request.user)
+			fm.update_path(upload_form.cleaned_data['upload_path'])
+			user_db = get_object_or_404(User, pk=request.user.user_id)
+			insufficient_count = 0
+			for file_to_upload in user_files:
+				user_db = get_object_or_404(User, pk=request.user.user_id)
+				if file_to_upload.size <= user_db.get_remaining_quota():
+					fm.upload_file(file_to_upload)
+				else:
+					# Not enough space to upload file
+					insufficient_count = insufficient_count + 1
 			# messages.success(request, "Files uploaded successfully")
-			return JsonResponse({'result': 0})
+			return JsonResponse({'result': 0, 'insufficient': insufficient_count})
 		else:
 			# messages.error(request, "Files could not be uploaded")
-			return JsonResponse({'result': 1})		
+			return JsonResponse({'result': 1})
 	else:
 		# No get allowed
 		return HttpResponseForbidden("Upload Rejected")
+
 
 def create_directory(request):
 	if request.method == 'POST':

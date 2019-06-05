@@ -41,7 +41,7 @@ urlpatterns = [
 	# File URLS
 	path('files/', userViews.file_explorer, name="fileExplorer"),
 	path('file/', userViews.file_browser, name="fileBrowser"),
-	path('file/details/', userViews.file_browser, name="fileDetails"),
+	path('file/details/', userViews.file_details, name="fileDetails"),
 	path('file/download', userViews.file_download, name="fileDownload"),
 	path('file/upload/', userViews.file_upload, name="fileUpload"),
 	path('file/mkdir/', userViews.create_directory, name="createDirectory"),

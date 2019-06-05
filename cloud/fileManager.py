@@ -6,6 +6,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse, HttpResponseNotFound
 from django.utils.encoding import smart_str
+from django.shortcuts import get_object_or_404
+from .models import User
 from wsgiref.util import FileWrapper
 
 
@@ -43,9 +45,9 @@ class FileManager(object):
 			self.abspath = self.user_storage.path(self.user_directory)
 		else:
 			self.path = self.clean_path(path)
-			self.abspath = os.path.join(self.user_storage.path(self.user_directory), self.path)			
+			self.abspath = os.path.join(self.user_storage.path(self.user_directory), self.path)
 		self.location = self.abspath
-		self.url = os.path.join(settings.MEDIA_URL, self.path)
+		# self.url = os.path.join(settings.MEDIA_URL, self.path)
 
 
 	def clean_path(self, path):
@@ -75,21 +77,24 @@ class FileManager(object):
 
 		return breadcrumbs
 
+
 	def update_context_data(self, context):
 		context.update({
 			'path': self.path,
 			'breadcrumbs': self.get_breadcrumbs(),
 		})
 
-	def file_details(self):
-		filename = self.path.rsplit('/', 1)[-1]
+
+	def file_details(self, file_path):
+		# TODO: GET SHARED LINK
+		file_path = self.user_storage.path(file_path)
+		filename = smart_str(os.path.split(file_path)[1]) # Extract filemame
 		return {
-			'directory': os.path.dirname(self.path),
-			'filepath': self.path,
+			'directory': os.path.dirname(file_path),
 			'filename': filename,
-			'filesize': file_size_formatted(self.user_storage.size(self.location)),
-			'filedate': self.user_storage.get_modified_time(self.location),
-			'fileurl': self.url,
+			'filesize': file_size_formatted(self.user_storage.size(file_path)),
+			'filedate': self.user_storage.get_modified_time(file_path),
+			'fileurl': file_path,
 		}
 
 
@@ -122,13 +127,31 @@ class FileManager(object):
 		return listing
 
 
-	def upload_file(self, filedata):
-		filename = STORAGE.get_valid_name(filedata.name)
-		filepath = os.path.join(self.path, filename)
-		signals.filemanager_pre_upload.send(sender=self.__class__, filename=filename, path=self.path, filepath=filepath)
-		self.user_storage.save(filepath, filedata)
-		signals.filemanager_post_upload.send(sender=self.__class__, filename=filename, path=self.path, filepath=filepath)
-		return filename
+	def upload_file(self, file_data):
+		filename = self.user_storage.get_valid_name(file_data.name)
+		upload_path = os.path.join(self.user_storage.path(self.location), filename)
+		# Check if user has sufficient space
+		if file_data.size > self.current_user.get_remaining_quota():
+			# Insufficent space
+			return False
+		else:
+			if os.path.exists(self.user_storage.path(upload_path)):
+				# Overwrite existing file and remove from quota
+				user_db = get_object_or_404(User, pk=self.current_user.user_id)
+				user_db.used_quota = user_db.used_quota - int(os.path.getsize(self.user_storage.path(upload_path)))
+				user_db.save()
+				os.remove(self.user_storage.path(upload_path))
+			try:
+				# Set max_length as a safety precaution to not go over-quota
+				self.user_storage.save(upload_path, file_data, max_length=self.current_user.get_remaining_quota())
+				user_db = get_object_or_404(User, pk=self.current_user.user_id)
+				# Update Quota
+				user_db.used_quota = user_db.used_quota + int(file_data.size)
+				user_db.save()
+				return True
+			except Exception as ex:
+				# Upload failed. Not enough space
+				return False
 
 
 	def download_file(self, filename):
@@ -160,7 +183,7 @@ class FileManager(object):
 			return False
 		else:
 			new_path = self.user_storage.path(new_directory)
-			temp_file = os.path.join(new_path, '.tmp')			
+			temp_file = os.path.join(new_path, '.tmp')
 			self.user_storage.save(temp_file, ContentFile(''))
 			self.user_storage.delete(temp_file)
 			return True

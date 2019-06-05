@@ -49,7 +49,7 @@
 				beforeSend: function(xhr) {
 					if($("#{{uploadForm.user_files.auto_id}}").val() == '') {
 						uploadStatus.empty();
-						uploadStatus.html("Select file to upload");
+						uploadStatus.html("Select file(s) to upload");
 						xhr.abort();
 						return false; // Abort send
 					} else {
@@ -69,9 +69,14 @@
 				complete: function(data) {
 					var jsonResponse = JSON.parse(data.responseText);
 					if(jsonResponse.result === 0) {
-						uploadStatus.html("Upload Complete");
-						// Close modal after 2.0 sec
-						setTimeout(function() {$('#uploadModal').modal('hide');}, 2000);
+						if(parseInt(jsonResponse.insufficient) === 0) {
+							uploadStatus.html("Upload Complete");
+							// Close modal after 2.0 sec
+							setTimeout(function() {$('#uploadModal').modal('hide');}, 2000);
+						} else {
+							uploadStatus.html("Upload Completed With Errors<br/><br/><h5 style=\"color: red;\">" + parseInt(jsonResponse.insufficient) +
+								(parseInt(jsonResponse.insufficient) === 1 ? " file " : " files ") + "failed due to insufficient space</h5>");
+						}
 					} else {
 						uploadStatus.html("Upload Failed");
 					}

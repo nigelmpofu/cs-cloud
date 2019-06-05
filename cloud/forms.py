@@ -99,9 +99,10 @@ class UserForm(forms.ModelForm):
 class UploadForm(forms.ModelForm):
 	class Meta:
 		model = UserData
-		fields = ['user_files']
+		fields = ['user_files', 'upload_path']
 
 	user_files = forms.FileField(label='Select files to upload:', widget=forms.ClearableFileInput(attrs={'multiple': True}))
+	upload_path = forms.CharField(widget=forms.HiddenInput(), required=True)
 
 
 class MkdirForm(forms.Form):
