@@ -24,6 +24,8 @@
 	</div>
 </div>
 <script type="text/javascript">
+	// Allow upload if ajax query takes too long
+	var availableSpace = Number.POSITIVE_INFINITY;
 	$("#uploadBtn").click(function() {
 		$("#uploadForm").submit();
 	});
@@ -39,6 +41,19 @@
 		$("#uploadBar").attr("style", "display: none; width: 0%");
 		window.location.reload();
 	});
+	$(document).ready(function(){
+		$.ajax({
+			url: "{% url 'checkQuota' %}",
+			type: "POST",
+			async: true,
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}'},
+			dataType: "json",
+			success: function(data){
+				availableSpace = parseInt(data.available);				
+			},
+			timeout: 3000 // 3 Second timeout
+		});
+});
 	$(function() {
 			var loadBar = $('#uploadBar');
 			var uploadBtn = $("#uploadBtn");
@@ -53,6 +68,18 @@
 						xhr.abort();
 						return false; // Abort send
 					} else {
+						var totalSize = 0;
+						// Validate file sizes can be uploaded
+						var filesToUpload = $('#{{uploadForm.user_files.auto_id}}').get(0).files;
+						for(i = 0; i < filesToUpload.length; i++) {
+							totalSize += filesToUpload[i].size;
+						}
+						if(totalSize > availableSpace) { // Available
+							uploadStatus.empty();
+							uploadStatus.html("<h4 style=\"color: red;\">Insufficient Space To  Upload File(s)</h4>");
+							xhr.abort();
+							return false; // Abort send
+						}
 						uploadStatus.empty();
 						loadBar.attr("aria-valuenow", 0);
 						loadBar.attr("style", "width: 0%");
@@ -77,6 +104,18 @@
 							uploadStatus.html("Upload Completed With Errors<br/><br/><h5 style=\"color: red;\">" + parseInt(jsonResponse.insufficient) +
 								(parseInt(jsonResponse.insufficient) === 1 ? " file " : " files ") + "failed due to insufficient space</h5>");
 						}
+						// Update user's available space
+						$.ajax({
+							url: "{% url 'checkQuota' %}",
+							type: "POST",
+							async: true,
+							data: {'csrfmiddlewaretoken': '{{csrf_token}}'},
+							dataType: "json",
+							success: function(data){
+								availableSpace = parseInt(data.available);								
+							},
+							timeout: 3000 // 3 Second timeout
+						});
 					} else {
 						uploadStatus.html("Upload Failed");
 					}

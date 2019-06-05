@@ -61,6 +61,10 @@ def file_download(request):
 	return fm.download_file(request.GET.get("file"))
 
 
+def check_quota(request):
+	return JsonResponse({'available': request.user.get_remaining_quota()})
+
+
 def file_upload(request):
 	if request.method == 'POST':
 		upload_form = UploadForm(request.POST, request.FILES)
