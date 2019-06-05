@@ -52,8 +52,7 @@ def file_details(request):
 		file_information = fm.file_details(file_path)
 	else:
 		return HttpResponseNotFound("Missing File")
-	context = {'file': file_information}
-	return render(request, 'cloud/fileDetails.html', context)
+	return JsonResponse(file_information)
 
 
 def file_download(request):

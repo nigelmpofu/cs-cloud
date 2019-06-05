@@ -63,7 +63,7 @@
 					{% else %}
 					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
 					{% endif %}
-					<td><a style="cursor: pointer; color: blue;" href="{% url 'fileDetails' %}?f={{file.filepath}}">Details</a></td>
+					<td><a style="cursor: pointer; color: blue;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}">Details</a></td>
 				</tr>
 				{% empty %}
 				<tr>
