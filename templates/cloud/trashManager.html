@@ -64,8 +64,8 @@
 							</button>
 							<ul class="dropdown-menu">
 								<li class="dropdown-header">Options</li>
-								<li><a href="#"><i class="fa fa-arrows" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Restore</a></li>								
-								<li><hr /></li>								
+								<li><a href="#"><i class="fa fa-arrows" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Restore</a></li>
+								<li><hr /></li>
 								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
 							</ul>
 						  </div>
@@ -117,7 +117,7 @@
 					});
 					// Close alert after 3 seconds
 					setTimeout(function(){
-						$("#alertOk").click();						
+						$("#alertOk").click();
 					}, 3000);
 				},
 				error: function() {
@@ -138,12 +138,12 @@
 	function confirmEmptyTrash() {
 		// Deletion confirmation modal
 		$("#confirmModal").modal('show');
-		msg = "Are you sure your want to empty your trash?";		
+		msg = "Are you sure your want to empty your trash?";
 		msg += "<br/><br/><b>This action cannot be undone</b>";
 		$("#confirmMsg").html(msg);
 		$("#confirmYes").unbind().on("click", function() {
 			$("#confirmModal").modal('hide');
-			var fileData = {				
+			var fileData = {
 				'csrfmiddlewaretoken': '{{csrf_token}}'
 			};
 			$.ajax({
@@ -158,7 +158,7 @@
 					});
 					// Close alert after 3 seconds
 					setTimeout(function(){
-						$("#alertOk").click();						
+						$("#alertOk").click();
 					}, 3000);
 				},
 				error: function() {

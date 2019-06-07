@@ -47,6 +47,7 @@ urlpatterns = [
 	path('file/delete/', userViews.file_delete, name="fileDelete"),
 	path('file/details/', userViews.file_details, name="fileDetails"),
 	path('file/download', userViews.file_download, name="fileDownload"),
+	path('file/rename', userViews.file_rename, name="fileRename"),
 	path('file/upload/', userViews.file_upload, name="fileUpload"),
 	path('file/upload/checkQuota/', userViews.check_quota, name="checkQuota"),
 	path('file/mkdir/', userViews.create_directory, name="createDirectory"),

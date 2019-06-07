@@ -119,8 +119,8 @@
 							</button>
 							<ul class="dropdown-menu">
 								<li class="dropdown-header">Options</li>
-								<li><a href="#"><i class="fa fa-pencil-square-o" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Rename</a></li>
-								<li><a href="#"><i class="fa fa-arrows" style="color: #696969; padding-right: 8px;"></i>&nbsp;Move</a></li>
+								<li><a data-toggle="modal" data-target="#renameModal" style="cursor: pointer;" data-fp="{{file.filepath}}" data-fn="{{file.filename}}"><i class="fa fa-pencil-square-o" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Rename</a></li>
+								<li><a href=""><i class="fa fa-arrows" style="color: #696969; padding-right: 8px;"></i>&nbsp;Move</a></li>
 								{% if file.filetype != "directory" %}
 								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}"><i class="fa fa-info-circle" style="color: #696969; padding-right: 8px;"></i>&nbsp;Details</a></li>
 								{% endif %}
@@ -144,6 +144,7 @@
 {% include "cloud/alertModal.html" %}
 {% include "cloud/confirmModal.html" %}
 {% include "cloud/fileDetailsModal.html" %}
+{% include "cloud/renameModal.html" %}
 {% include "cloud/uploadModal.html" %}
 {% include "cloud/mkdirModal.html" %}
 <script type="text/javascript">
@@ -179,7 +180,7 @@
 					});
 					// Close alert after 3 seconds
 					setTimeout(function(){
-						$("#alertOk").click();						
+						$("#alertOk").click();
 					}, 3000);
 				},
 				error: function() {

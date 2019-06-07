@@ -172,6 +172,7 @@ class FileManager(object):
 
 		return listing
 
+
 	def delete_item(self, item_path):
 		try:
 			delete_path = os.path.join(self.user_storage.path(self.user_directory), item_path)
@@ -181,6 +182,7 @@ class FileManager(object):
 		# TODO: Unshare file if shared
 		shutil.move(delete_path, self.trash_storage.path(self.user_trash))
 		return JsonResponse({'result': 0})
+
 
 	def purge_item(self, item_path):
 		try:
@@ -222,6 +224,7 @@ class FileManager(object):
 				# Upload failed. Not enough space
 				return False
 
+
 	def empty_trash(self):
 		# Delete trsah folder and recreate it
 		# TODO: Wipe database
@@ -229,6 +232,7 @@ class FileManager(object):
 		shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
 		os.mkdir(delete_path)
 		return JsonResponse({'result': 0})
+
 
 	def download_file(self, filename):
 		download_path = ''
@@ -266,4 +270,20 @@ class FileManager(object):
 			temp_file = os.path.join(new_path, '.tmp')
 			self.user_storage.save(temp_file, ContentFile(''))
 			self.user_storage.delete(temp_file)
+			return True
+
+
+	def rename(self, file_path, new_name):
+		try:
+			rename_path = os.path.join(self.user_storage.path(self.user_directory), file_path)
+		except Exception:
+			# File not found
+			return False
+		new_name_path = os.path.join(self.user_storage.path(rename_path), "../")
+		new_name_path = os.path.join(self.user_storage.path(new_name_path), new_name)
+		# TODO: Change shared urls if necessary
+		if os.path.exists(new_name_path):
+			return False
+		else:
+			os.rename(rename_path, new_name_path)
 			return True

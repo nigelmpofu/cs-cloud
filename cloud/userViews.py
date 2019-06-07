@@ -6,7 +6,7 @@ from cloud.decorators.userRequired import user_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
-from .forms import LoginForm, MkdirForm, RecoverPasswordForm, ResetForm, UploadForm
+from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm
 from .mailer import send_password_request_email
 from .models import User
 from .fileManager import FileManager
@@ -36,13 +36,14 @@ def file_explorer(request):
 			return redirect("index")
 	fm = FileManager(request.user)
 	mkdir_form = MkdirForm()
+	rename_form = RenameForm()
 	upload_form = UploadForm()
 	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 		new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 		fm.update_path(new_path)
 		mkdir_form.initial['dir_path'] = new_path
 		upload_form.initial['upload_path'] = new_path
-	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form}
+	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form, 'renameForm': rename_form}
 	fm.update_context_data(context)
 	return render(request, 'cloud/fileManager.html', context)
 
@@ -130,6 +131,21 @@ def file_details(request):
 		return HttpResponseForbidden("Not allowed")
 
 
+def file_rename(request):
+	if request.method == 'POST':
+		rename_form = RenameForm(request.POST)
+		rename_form.full_clean()
+		if rename_form.is_valid():
+			fm = FileManager(request.user)
+			if fm.rename(rename_form.cleaned_data['rename_path'], rename_form.cleaned_data['new_name']):
+				return JsonResponse({'result': 0})
+			else:
+				return JsonResponse({'result': 1})
+	else:
+		# Reject get request
+		return HttpResponseForbidden("Not allowed")
+
+
 def file_download(request):
 	fm = FileManager(request.user)
 	return fm.download_file(request.GET.get("file"))
@@ -172,8 +188,7 @@ def create_directory(request):
 		mkdir_form.full_clean()
 		if mkdir_form.is_valid():
 			fm = FileManager(request.user)
-			fm.update_path(mkdir_form.cleaned_data['dir_path'])
-			print(mkdir_form.cleaned_data['dir_path'])
+			fm.update_path(mkdir_form.cleaned_data['dir_path'])			
 			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
 			if mkdir_status:
 				return JsonResponse({'result': 0})

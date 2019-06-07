@@ -49,7 +49,7 @@
 			data: {'csrfmiddlewaretoken': '{{csrf_token}}'},
 			dataType: "json",
 			success: function(data){
-				availableSpace = parseInt(data.available);				
+				availableSpace = parseInt(data.available);
 			},
 			timeout: 3000 // 3 Second timeout
 		});
@@ -112,7 +112,7 @@
 							data: {'csrfmiddlewaretoken': '{{csrf_token}}'},
 							dataType: "json",
 							success: function(data){
-								availableSpace = parseInt(data.available);								
+								availableSpace = parseInt(data.available);
 							},
 							timeout: 3000 // 3 Second timeout
 						});

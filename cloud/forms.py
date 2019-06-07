@@ -111,3 +111,11 @@ class MkdirForm(forms.Form):
 		max_length = 16,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'dir_name', 'placeholder': 'Directory Name', 'autocomplete': 'off'}))
 	dir_path = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+
+class RenameForm(forms.Form):
+	new_name = forms.CharField(
+		label="New File Name",
+		max_length = 16,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'new_name', 'placeholder': 'New Name', 'autocomplete': 'off'}))
+	rename_path = forms.CharField(widget=forms.HiddenInput(), required=False)
