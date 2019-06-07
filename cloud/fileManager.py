@@ -35,13 +35,17 @@ def md5_checksum(filename):
 class FileManager(object):
 	current_user = None
 	user_directory = None
+	user_trash = None
 	user_storage = None
+	trash_storage = None
 	def __init__(self, user=None):
 		self.current_user = user
 		if self.current_user != None:
 			self.user_directory = settings.MEDIA_ROOT + "/" + self.current_user.user_id
+			self.user_trash = settings.TRASH_ROOT + "/" + self.current_user.user_id
 			# For security, limit access to user directory only
 			self.user_storage = FileSystemStorage(location=self.user_directory)
+			self.trash_storage = FileSystemStorage(location=self.user_trash)
 		else:
 			# Handle none logged in user
 			user_storage = None

@@ -29,7 +29,7 @@ def file_explorer(request):
 			return redirect("index")
 	if not os.path.exists(user_trash):
 		try:
-			os.mkdir(user_directory)
+			os.mkdir(user_trash)
 		except OSError:
 			messages.error(request, "Error accessing your data.<br/>Contact admin")
 			logout(request)
@@ -97,10 +97,10 @@ def file_upload(request):
 				else:
 					# Not enough space to upload file
 					insufficient_count = insufficient_count + 1
-			# messages.success(request, "Files uploaded successfully")
+			# messages.success(request, "Files uploaded successfully")			
 			return JsonResponse({'result': 0, 'insufficient': insufficient_count})
 		else:
-			# messages.error(request, "Files could not be uploaded")
+			# messages.error(request, "Files could not be uploaded")			
 			return JsonResponse({'result': 1})
 	else:
 		# No get allowed

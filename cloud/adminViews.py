@@ -40,12 +40,21 @@ def create_new_user(request, user_id, user_title, user_initials, user_name, user
 
 	if user:
 		user_directory = settings.MEDIA_ROOT + "/" + user.user_id
+		user_trash = settings.TRASH_ROOT + "/" + user.user_id
 		if not os.path.exists(user_directory):
 			try:
 				os.mkdir(user_directory)
 			except OSError:
 				# User Directory could not be create
 				messages.error(request, "User directory could not be created")
+				user.delete()
+				return None
+		if not os.path.exists(user_trash):
+			try:
+				os.mkdir(user_trash)
+			except OSError:
+				# User Directory could not be create
+				messages.error(request, "User trash directory could not be created")
 				user.delete()
 				return None
 		user_token = tokenizer.make_token(user) # Create password reset token
@@ -198,9 +207,11 @@ def users_delete(request):
 				# Cannot delete yourself
 				continue
 			user_directory = settings.MEDIA_ROOT + "/" + user.user_id
+			user_trash = settings.TRASH_ROOT + "/" + user.user_id
 			try:
 				# Possible Improvements: Better error handling and reporting
-				shutil.rmtree(user_directory, ignore_errors=True) # Delete ALL user data
+				shutil.rmtree(user_directory, ignore_errors=True) # Delete ALL user data				
+				shutil.rmtree(user_trash, ignore_errors=True) # Delete ALL user trash				
 			except Exception as ex:
 				pass
 			user.delete()

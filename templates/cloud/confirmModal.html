@@ -1,32 +1,30 @@
-<!-- Button trigger modal-->
-<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalConfirmDelete">Launch
-  modal</button>
-
-<!--Modal: modalConfirmDelete-->
-<div class="modal fade" id="modalConfirmDelete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-  aria-hidden="true">
-  <div class="modal-dialog modal-sm modal-notify modal-danger" role="document">
-    <!--Content-->
-    <div class="modal-content text-center">
-      <!--Header-->
-      <div class="modal-header d-flex justify-content-center">
-        <p class="heading">Are you sure?</p>
-      </div>
-
-      <!--Body-->
-      <div class="modal-body">
-
-        <i class="fas fa-times fa-4x animated rotateIn"></i>
-
-      </div>
-
-      <!--Footer-->
-      <div class="modal-footer flex-center">
-        <a href="" class="btn  btn-outline-danger">Yes</a>
-        <a type="button" class="btn  btn-danger waves-effect" data-dismiss="modal">No</a>
-      </div>
-    </div>
-    <!--/.Content-->
-  </div>
+{% load staticfiles %}
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModal" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-notify modal-danger" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header d-flex justify-content-center">
+				<h4 class="modal-title">Confirm Action</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<h5 id="confirmMsg"></h5>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" id="confirmYes">Yes</button>
+				<button type="button" class="btn btn-secondary" id="confirmNo" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
 </div>
-<!--Modal: modalConfirmDelete-->
+<script type="text/javascript">
+	$('#confirmModal').on('keyup', function (e) {
+		// Handle enter key press event
+		if(e.keycode == 13 || e.which == 13) {
+			$("#confirmYes").click();
+		}
+	});
+	$("#confirmModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#confirmMsg").empty();
+	});
+</script>

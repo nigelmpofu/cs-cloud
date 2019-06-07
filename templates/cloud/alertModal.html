@@ -1,0 +1,29 @@
+{% load staticfiles %}
+<div class="modal fade" id="alertModal" tabindex="-1" role="dialog" aria-labelledby="alertModal" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-notify" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title"><b>Alert</b></h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<h5 id="alertMsg"></h5>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$('#alertModal').on('keyup', function (e) {
+		// Handle enter key press event
+		if(e.keycode == 13 || e.which == 13) {
+			$("#alertModal").modal('hide');
+		}
+	});
+	$("#confirmModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#alertMsg").empty();
+	});
+</script>
