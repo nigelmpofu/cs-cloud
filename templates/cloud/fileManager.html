@@ -42,6 +42,21 @@
 		.is-hide{
 			display:none;
 		}
+		.dropdown-menu {
+			border-radius: 16px;
+			display: none;
+			position: absolute;
+			background-color: #f9f9f9;
+			min-width: 160px;
+			box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+			z-index: 1;
+		}
+		.dropdown-menu a {
+			color: black;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+		}
 	</style>
 {% endblock extrahead %}
 {% block context %}
@@ -97,7 +112,26 @@
 					{% else %}
 					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
 					{% endif %}
-					<td><a style="cursor: pointer; color: blue;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}">Details</a></td>
+					<!--<td><a style="cursor: pointer; color: blue;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}">Details</a></td>-->
+					<td>
+						<div class="dropdown">
+							<button class="btn btn-default" type="button" data-toggle="dropdown">
+								<i class="fa fa-ellipsis-h" style="font-size:24px; color: black; cursor: pointer;" data-toggle="tooltip" title="More"></i>
+							</button>
+							<ul class="dropdown-menu">
+								<li class="dropdown-header">Options</li>
+								<li><a href="#">Rename</a></li>
+								<li><a href="#">Move</a></li>
+								{% if file.filetype != "directory" %}
+								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}">Details</a></li>
+								{% endif %}
+								<li><hr /></li>
+								<li><a href="#">Sharing</a></li>
+								<li><a href="#" style="color: red;">Delete</a></li>
+							</ul>
+						  </div>
+						</div>
+						</td>
 				</tr>
 				{% empty %}
 				<tr>

@@ -130,6 +130,7 @@ STATICFILES_DIRS = (
 # where all user data will be stored
 # May be changed to alternative location for more storage
 MEDIA_ROOT = os.path.join(BASE_DIR, "data")
+TRASH_ROOT = os.path.join(BASE_DIR, "trash")
 
 
 """

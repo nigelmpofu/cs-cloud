@@ -17,10 +17,14 @@ from .views import reset_password
 
 @admin_required
 def user_admin(request):
-	user_form = UserForm()
-	users = User.objects.all
-	context = {'userForm': user_form, 'users': users}
-	return render(request, 'cloud/userAdmin.html', context)
+	if request.user.is_staff:
+		user_form = UserForm()
+		users = User.objects.all
+		context = {'userForm': user_form, 'users': users}
+		return render(request, 'cloud/userAdmin.html', context)
+	else:
+		# Just incase
+		return redirect("fileExplorer")
 
 
 @admin_required
@@ -164,6 +168,7 @@ def edit_user(request):
 		user.email = post_email
 		user.disk_quota = post_quota
 		user.is_staff = str2bool(post_is_admin)		
+		user.is_superuser = str2bool(post_is_admin)		
 		user.save()
 		return HttpResponse()
 	else:

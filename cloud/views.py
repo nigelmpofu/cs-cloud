@@ -25,7 +25,7 @@ def index(request):
 		if request.user.is_user_admin:
 			return redirect('userAdmin')
 		else:
-			return redirect('files')
+			return redirect('fileExplorer')
 	else:
 		return login(request)
 
@@ -52,7 +52,7 @@ def auth(request):
 					if user.is_user_admin:
 						return redirect('userAdmin')
 					else:
-						return redirect('files')
+						return redirect('fileExplorer')
 		# Access Denied
 		messages.add_message(request, messages.ERROR, "Access Denied")
 		return redirect('/')

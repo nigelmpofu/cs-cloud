@@ -1,0 +1,3 @@
+# Ignore ALL private user data
+*
+!.gitignore

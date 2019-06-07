@@ -19,7 +19,15 @@ def file_explorer(request):
 	as the user directory might not have been created
 	"""
 	user_directory = settings.MEDIA_ROOT + "/" + request.user.user_id
+	user_trash = settings.TRASH_ROOT + "/" + request.user.user_id
 	if not os.path.exists(user_directory):
+		try:
+			os.mkdir(user_directory)
+		except OSError:
+			messages.error(request, "Error accessing your data.<br/>Contact admin")
+			logout(request)
+			return redirect("index")
+	if not os.path.exists(user_trash):
 		try:
 			os.mkdir(user_directory)
 		except OSError:
