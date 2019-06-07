@@ -62,7 +62,7 @@
 {% block context %}
 <div class="cscbrowser">
 	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
-		<div class="card-header" style="border-radius: 16px;"><h4>My Files<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span></h4>
+		<div class="card-header" style="border-radius: 16px;"><h4>My Files<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span><a href="{% url 'trashExplorer' %}"><i class="fa fa-trash fa-2x pull-right" style="color: #696969;" title="Trash" data-toggle="tooltip"></i></a></h4>
 		</div>
 		<ul class="breadcrumb">
 			{% for breadcrumb in breadcrumbs %}
@@ -126,7 +126,7 @@
 								{% endif %}
 								<li><hr /></li>
 								<li><a href="#"><i class="fa fa-share-alt" style="color: #696969; padding-right: 8px;"></i>&nbsp;Sharing</a></li>
-								<li><a href="#" style="color: red;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
+								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
 							</ul>
 						  </div>
 						</div>
@@ -141,6 +141,8 @@
 		</table>
 	</div>
 </div>
+{% include "cloud/alertModal.html" %}
+{% include "cloud/confirmModal.html" %}
 {% include "cloud/fileDetailsModal.html" %}
 {% include "cloud/uploadModal.html" %}
 {% include "cloud/mkdirModal.html" %}
@@ -148,5 +150,52 @@
 	$(document).ready(function() {
 		$('[data-toggle="tooltip"]').tooltip();
 	});
+	window.alert = function(message) {
+		// Alert window override
+		$("#alertModal").modal('show');
+		$("#alertMsg").html(message);
+	};
+	function confirmDelete(filename, filepath) {
+		// Deletion confirmation modal
+		$("#confirmModal").modal('show');
+		msg = "Are you sure your want to delete the following:";
+		msg += "<br/><b>" + filename + "</b>";
+		$("#confirmMsg").html(msg);
+		$("#confirmYes").unbind().on("click", function() {
+			$("#confirmModal").modal('hide');
+			var fileData = {
+				'fp': filepath,
+				'csrfmiddlewaretoken': '{{csrf_token}}'
+			};
+			$.ajax({
+				type: 'POST',
+				url: "{% url 'fileDelete' %}",
+				data: fileData,
+				success: function() {
+					alert("File moved to trash");
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+						window.location.reload();
+					});
+					// Close alert after 3 seconds
+					setTimeout(function(){
+						$("#alertOk").click();						
+					}, 3000);
+				},
+				error: function() {
+					alert("An error occured during file deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				},
+				failure: function() {
+					alert("An error occured during file deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				}
+			});
+		});
+	};
 </script>
 {% endblock %}

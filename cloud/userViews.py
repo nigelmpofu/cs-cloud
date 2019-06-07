@@ -47,9 +47,68 @@ def file_explorer(request):
 	return render(request, 'cloud/fileManager.html', context)
 
 
+@user_required
+def trash_explorer(request):
+	user_directory = settings.MEDIA_ROOT + "/" + request.user.user_id
+	user_trash = settings.TRASH_ROOT + "/" + request.user.user_id
+	if not os.path.exists(user_directory):
+		try:
+			os.mkdir(user_directory)
+		except OSError:
+			messages.error(request, "Error accessing your data.<br/>Contact admin")
+			logout(request)
+			return redirect("index")
+	if not os.path.exists(user_trash):
+		try:
+			os.mkdir(user_trash)
+		except OSError:
+			messages.error(request, "Error accessing your data.<br/>Contact admin")
+			logout(request)
+			return redirect("index")
+	fm = FileManager(request.user)
+	context = {'files': fm.trash_list()}
+	return render(request, 'cloud/trashManager.html', context)
+
 def file_browser(request):
 	# Todo: file handling, sharing and security
 	return HttpResponse("File: " + request.GET.get("f"))
+
+
+def file_delete(request):
+	if request.method == 'POST':
+		file_path = request.POST.get("fp", None)
+		if file_path == None:
+			return HttpResponseNotFound("Missing file")
+		else:
+			file_path = file_path.replace("../", "") # No previous directory browsing
+			fm = FileManager(request.user)
+			return fm.delete_item(file_path)
+	else:
+		# Get not allowed
+		return HttpResponseForbidden("Not allowed")
+
+
+def file_delete_perm(request):
+	if request.method == 'POST':
+		file_path = request.POST.get("fp", None)
+		if file_path == None:
+			return HttpResponseNotFound("Missing file")
+		else:
+			file_path = file_path.replace("../", "") # No previous directory browsing
+			fm = FileManager(request.user)
+			return fm.purge_item(file_path)
+	else:
+		# Get not allowed
+		return HttpResponseForbidden("Not allowed")
+
+
+def empty_trash(request):
+	if request.method == 'POST':
+		fm = FileManager(request.user)
+		return fm.empty_trash()
+	else:
+		# Get not allowed
+		return HttpResponseForbidden("Not allowed")		
 
 
 def file_details(request):
@@ -57,7 +116,7 @@ def file_details(request):
 		fm = FileManager(request.user)
 		file_information = {}
 		file_path = request.POST.get("filepath", None)
-		if file_path == None:		
+		if file_path == None:
 			return HttpResponseNotFound("Missing file")
 		else:
 			file_path = file_path.replace("../", "") # No previous directory browsing
@@ -97,10 +156,10 @@ def file_upload(request):
 				else:
 					# Not enough space to upload file
 					insufficient_count = insufficient_count + 1
-			# messages.success(request, "Files uploaded successfully")			
+			# messages.success(request, "Files uploaded successfully")
 			return JsonResponse({'result': 0, 'insufficient': insufficient_count})
 		else:
-			# messages.error(request, "Files could not be uploaded")			
+			# messages.error(request, "Files could not be uploaded")
 			return JsonResponse({'result': 1})
 	else:
 		# No get allowed

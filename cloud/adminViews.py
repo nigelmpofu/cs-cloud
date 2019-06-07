@@ -176,8 +176,8 @@ def edit_user(request):
 		user.cell = post_cell
 		user.email = post_email
 		user.disk_quota = post_quota
-		user.is_staff = str2bool(post_is_admin)		
-		user.is_superuser = str2bool(post_is_admin)		
+		user.is_staff = str2bool(post_is_admin)
+		user.is_superuser = str2bool(post_is_admin)
 		user.save()
 		return HttpResponse()
 	else:
@@ -210,8 +210,8 @@ def users_delete(request):
 			user_trash = settings.TRASH_ROOT + "/" + user.user_id
 			try:
 				# Possible Improvements: Better error handling and reporting
-				shutil.rmtree(user_directory, ignore_errors=True) # Delete ALL user data				
-				shutil.rmtree(user_trash, ignore_errors=True) # Delete ALL user trash				
+				shutil.rmtree(user_directory, ignore_errors=True) # Delete ALL user data
+				shutil.rmtree(user_trash, ignore_errors=True) # Delete ALL user trash
 			except Exception as ex:
 				pass
 			user.delete()

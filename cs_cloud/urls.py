@@ -40,7 +40,11 @@ urlpatterns = [
 	
 	# File URLS
 	path('files/', userViews.file_explorer, name="fileExplorer"),
+	path('files/trash/', userViews.trash_explorer, name="trashExplorer"),
+	path('files/trash/delete/', userViews.file_delete_perm, name="permDelete"),
+	path('files/trash/empty/', userViews.empty_trash, name="emptyTrash"),
 	path('file/', userViews.file_browser, name="fileBrowser"),
+	path('file/delete/', userViews.file_delete, name="fileDelete"),
 	path('file/details/', userViews.file_details, name="fileDetails"),
 	path('file/download', userViews.file_download, name="fileDownload"),
 	path('file/upload/', userViews.file_upload, name="fileUpload"),

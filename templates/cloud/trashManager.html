@@ -1,0 +1,180 @@
+{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% block extrahead %}
+	<title>Trash - CS Cloud</title>
+	<style>
+		.cscbrowser {
+			position: absolute;
+			left: 16px;
+			right: 16px;
+		}		
+		.dropdown-menu {
+			border-radius: 16px;
+			display: none;
+			position: absolute;
+			background-color: #f9f9f9;
+			min-width: 160px;
+			box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+			z-index: 1;
+		}
+		.dropdown-menu a {
+			color: black;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+		}
+	</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="cscbrowser">
+	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
+		<div class="card-header" style="border-radius: 16px;"><h4><b>TRASH</b><span onclick="confirmEmptyTrash();"><i class="fa fa-remove fa-2x pull-right" style="color: red;" data-toggle="tooltip" title="Empty Trash"></i></span></h4></div>
+		<ul class="breadcrumb">
+			<li style="color: #696969; cursor: default;">
+				<a href="{% url 'fileExplorer' %}" style="color: #696969;"> <!-- Dark grey -->
+					<i class="fa fa-home" style="font-size:24px; color: #696969; cursor: pointer;" data-toggle="tooltip" title="Home Directory"></i>
+				</a>
+			</li>
+		</ul>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Type</th>
+					<th>Name</th>
+					<th>Size</th>
+					<th>Deletion Date</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for file in files %}
+				<tr>
+					<td>{{file.filetype}}</td>
+					{% if file.filetype == "directory" %}
+					<td><span data-toggle="tooltip" title="Move from trash to view contents">{{file.filename}}</span></td>
+					{% else %}
+					<td>{{file.filename}}</td>
+					{% endif %}
+					<td>{% if file.filetype == "directory" %}----{%else%}{{file.filesize}}{%endif%}</td>
+					<td>{{file.filedate}}</td>
+					<td>
+						<div class="dropdown">
+							<button class="btn btn-default" type="button" data-toggle="dropdown">
+								<i class="fa fa-ellipsis-h" style="font-size:24px; color: black; cursor: pointer;" data-toggle="tooltip" title="More"></i>
+							</button>
+							<ul class="dropdown-menu">
+								<li class="dropdown-header">Options</li>
+								<li><a href="#"><i class="fa fa-arrows" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Restore</a></li>								
+								<li><hr /></li>								
+								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
+							</ul>
+						  </div>
+						</div>
+						</td>
+				</tr>
+				{% empty %}
+				<tr>
+					<td colspan="5">Trash is empty</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% include "cloud/alertModal.html" %}
+{% include "cloud/confirmModal.html" %}
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
+	});
+	window.alert = function(message) {
+		// Alert window override
+		$("#alertModal").modal('show');
+		$("#alertMsg").html(message);
+	};
+	function confirmDelete(filename, filepath) {
+		// Deletion confirmation modal
+		$("#confirmModal").modal('show');
+		msg = "Are you sure your want to delete the following:";
+		msg += "<br/><b>" + filename + "</b>";
+		msg += "<br/><br/><b>This action cannot be undone</b>";
+		$("#confirmMsg").html(msg);
+		$("#confirmYes").unbind().on("click", function() {
+			$("#confirmModal").modal('hide');
+			var fileData = {
+				'fp': filepath,
+				'csrfmiddlewaretoken': '{{csrf_token}}'
+			};
+			$.ajax({
+				type: 'POST',
+				url: "{% url 'permDelete' %}",
+				data: fileData,
+				success: function() {
+					alert("File deleted successfully");
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+						window.location.reload();
+					});
+					// Close alert after 3 seconds
+					setTimeout(function(){
+						$("#alertOk").click();						
+					}, 3000);
+				},
+				error: function() {
+					alert("An error occured during file deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				},
+				failure: function() {
+					alert("An error occured during file deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				}
+			});
+		});
+	};
+	function confirmEmptyTrash() {
+		// Deletion confirmation modal
+		$("#confirmModal").modal('show');
+		msg = "Are you sure your want to empty your trash?";		
+		msg += "<br/><br/><b>This action cannot be undone</b>";
+		$("#confirmMsg").html(msg);
+		$("#confirmYes").unbind().on("click", function() {
+			$("#confirmModal").modal('hide');
+			var fileData = {				
+				'csrfmiddlewaretoken': '{{csrf_token}}'
+			};
+			$.ajax({
+				type: 'POST',
+				url: "{% url 'emptyTrash' %}",
+				data: fileData,
+				success: function() {
+					alert("Trash cleared successfully");
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+						window.location.reload();
+					});
+					// Close alert after 3 seconds
+					setTimeout(function(){
+						$("#alertOk").click();						
+					}, 3000);
+				},
+				error: function() {
+					alert("An error occured during trash deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				},
+				failure: function() {
+					alert("An error occured during trash deletion");
+					setTimeout(function(){
+						$("#alertModal").modal('hide');
+					}, 3500);
+				}
+			});
+		});
+	};
+</script>
+{% endblock %}

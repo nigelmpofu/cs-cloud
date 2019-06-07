@@ -1,11 +1,11 @@
 import os
 import hashlib
 import mimetypes
-
+import shutil
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.utils.encoding import smart_str
 from django.shortcuts import get_object_or_404
 from .models import User
@@ -144,6 +144,58 @@ class FileManager(object):
 		return listing
 
 
+	def trash_list(self):
+		listing = []
+
+		directories, files = self.trash_storage.listdir(self.user_trash)
+
+		def _helper(name, filetype):
+			return {
+				'filepath': self.trash_storage.get_valid_name(name),
+				'filetype': filetype,
+				'filename': name,
+				'filedate': self.trash_storage.get_modified_time(os.path.join(self.user_trash, name)),
+				'filesize': file_size_formatted(self.trash_storage.size(os.path.join(self.user_trash, name))),
+			}
+
+		for directoryname in directories:
+			listing.append(_helper(directoryname, 'directory'))
+
+		mimetypes.init()
+		for filename in files:
+			guessed_mime = mimetypes.guess_type(filename)[0]
+			if(guessed_mime == None):
+				file_mime = "unknown"
+			else:
+				file_mime = str(guessed_mime)
+			listing.append(_helper(filename, file_mime))
+
+		return listing
+
+	def delete_item(self, item_path):
+		try:
+			delete_path = os.path.join(self.user_storage.path(self.user_directory), item_path)
+		except Exception:
+			return HttpResponseNotFound("File not found")
+		# Move to trash
+		# TODO: Unshare file if shared
+		shutil.move(delete_path, self.trash_storage.path(self.user_trash))
+		return JsonResponse({'result': 0})
+
+	def purge_item(self, item_path):
+		try:
+			delete_path = os.path.join(self.trash_storage.path(self.user_trash), item_path)
+		except Exception:
+			return HttpResponseNotFound("File not found")
+		# Permanantly delete file
+		print(delete_path)
+		if os.path.isdir(delete_path):
+			shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
+		else:
+			os.remove(delete_path) # Delete file
+		return JsonResponse({'result': 0})
+
+
 	def upload_file(self, file_data):
 		filename = self.user_storage.get_valid_name(file_data.name)
 		upload_path = os.path.join(self.user_storage.path(self.location), filename)
@@ -170,6 +222,13 @@ class FileManager(object):
 				# Upload failed. Not enough space
 				return False
 
+	def empty_trash(self):
+		# Delete trsah folder and recreate it
+		# TODO: Wipe database
+		delete_path = self.user_trash
+		shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
+		os.mkdir(delete_path)
+		return JsonResponse({'result': 0})
 
 	def download_file(self, filename):
 		download_path = ''

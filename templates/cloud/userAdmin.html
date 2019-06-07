@@ -200,7 +200,7 @@
 		// Deletion confirmation modal
 		$("#confirmModal").modal('show');
 		$("#confirmMsg").html(msg);
-		$("#confirmYes").unbind().on("click", function() {
+		$("#confirmYes").unbind().one("click", function() {
 			$("#confirmModal").modal('hide');
 			$.ajax({
 				type: 'POST',
