@@ -1,10 +1,11 @@
 import os
+import hashlib
 import mimetypes
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.utils.encoding import smart_str
 from django.shortcuts import get_object_or_404
 from .models import User
@@ -21,6 +22,14 @@ def file_size_formatted(file_size):
 			return "%3.1f %s" % (file_size, data_unit)
 		file_size /= 1024.0
 	return "%3.1f %s" % (file_size, 'TB')
+
+
+def md5_checksum(filename):
+	md5_hash = hashlib.md5()
+	with open(filename, "rb") as f:
+		for chunk in iter(lambda: f.read(4096), b""):
+			md5_hash.update(chunk)
+	return md5_hash.hexdigest()
 
 
 class FileManager(object):
@@ -89,13 +98,17 @@ class FileManager(object):
 		# TODO: GET SHARED LINK
 		file_path = self.user_storage.path(file_path)
 		filename = smart_str(os.path.split(file_path)[1]) # Extract filemame
-		return {
-			'directory': os.path.dirname(file_path),
-			'filename': filename,
-			'filesize': file_size_formatted(self.user_storage.size(file_path)),
-			'filedate': self.user_storage.get_modified_time(file_path),
-			'fileurl': file_path,
-		}
+		if os.path.isfile(file_path):
+			return {
+				'md5checksum': md5_checksum(file_path),
+				'directory': os.path.dirname(file_path),
+				'filename': filename,
+				'filesize': file_size_formatted(self.user_storage.size(file_path)),
+				'filedate': self.user_storage.get_modified_time(file_path),
+				'fileurl': file_path,
+			}
+		else:
+			return {}
 
 
 	def directory_list(self):
@@ -160,14 +173,18 @@ class FileManager(object):
 			download_path = os.path.join(self.user_storage.path(self.user_directory), filename)
 		except Exception:
 			return HttpResponseNotFound("File not found")
-		file_wrapper = FileWrapper(open(download_path,'rb'))
-		file_mimetype = mimetypes.guess_type(download_path)[0]
-		response = HttpResponse(file_wrapper, content_type=file_mimetype)
-		response['X-Sendfile'] = download_path
-		response['Content-Length'] = self.user_storage.size(download_path)
-		# Extract filename only
-		response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(os.path.split(filename)[1])
-		return response
+		if os.path.isdir(download_path):
+			# Cannot download directory
+			return HttpResponseForbidden("Not allowed")
+		else:
+			file_wrapper = FileWrapper(open(download_path,'rb'))
+			file_mimetype = mimetypes.guess_type(download_path)[0]
+			response = HttpResponse(file_wrapper, content_type=file_mimetype)
+			response['X-Sendfile'] = download_path
+			response['Content-Length'] = self.user_storage.size(download_path)
+			# Extract filename only
+			response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(os.path.split(filename)[1])
+			return response
 
 
 	def create_directory(self, dir_name):

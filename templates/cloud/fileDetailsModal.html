@@ -1,23 +1,21 @@
 {% load staticfiles %}
 <div class="modal fade" id="fileDetailsModal" role="dialog" tabindex="-1" aria-labelledby="FileDetails" aria-hidden="true">
-	<div class="modal-dialog" role="dialog">
+	<div id="waitOverlay">
+		<div class="wait-spinner">
+			<span class="spinner"></span>
+		</div>
+	</div>
+	<div class="modal-dialog modal-lg" role="dialog">
 		<div class="modal-content text-center">
 			<div class="modal-header">
-				<h4 class="modal-title" id="modalTitle">Details</h4>
+				<h4 class="modal-title" id="modalTitle">Details: ...</h4>
 				<button type="button" class="close" data-dismiss="modal">&times;</button>
 			</div>
 			<div class="modal-body" data-keyboard="false">
-				<div id="wait" style="display: none; width: 69px; height: 89px; border: 1px solid black; position: absolute; top: 50%; left: 50%; padding: 2px;">
-					<img src="{% static '/img/loading.gif' %}" width="64" height="64" /><br>Loading...
-				</div>
 				<h4 id="filename"></h4>
+				<h4 id="md5checksum"></h4>
 				<h4 id="filesize"></h4>
 				<h4 id="filemodified"></h4>
-
-
-
-
-				
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
@@ -28,27 +26,44 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		$(document).ajaxStart(function() {
-			$("#wait").css("display", "block");
+			$("#waitOverlay").fadeIn(300);
 		});
 		$(document).ajaxComplete(function() {
-			$("#wait").css("display", "none");
+			$("#waitOverlay").fadeOut(300);
 		});
+	});
+	$("#fileDetailsModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#modalTitle").html("Details: ...");
+		$("#md5checksum").html("");
+		$("#filename").html("");
+		$("#filesize").html("");
+		$("#filemodified").html("");
 	});
 	$('#fileDetailsModal').on("shown.bs.modal", function(e) {
 		var filePath = $(e.relatedTarget).data('fp');
 		$.ajax({
-			url: "{% url 'fileDetails' %}?f=" + filePath,
-			type: "GET",
+			url: "{% url 'fileDetails' %}",
+			type: "POST",
 			async: true,
-			//data: {'csrfmiddlewaretoken': '{{csrf_token}}'},
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath},
 			dataType: "json",
-			success: function(data){
-				$("#modalTitle").html("Details: " + data.filename);
-				$("#filename").html("Filename: " + data.filename);
-				$("#filesize").html("File Size: " + data.filesize);
-				$("#filemodified").html("Modified: " + new Date(data.filedate ).toUTCString().replace(/ GMT$/, ""));
+			success: function(data) {
+				$("#modalTitle").html("<b>Details:</b> " + data.filename);
+				$("#md5checksum").html("<b>MD5:</b> " + data.md5checksum);
+				$("#filename").html("<b>Filename:</b> " + data.filename);
+				$("#filesize").html("<b>File Size:</b> " + data.filesize);
+				$("#filemodified").html("<b>Modified:</b> " + new Date(data.filedate ).toUTCString().replace(/ GMT$/, ""));
 			},
-			timeout: 5000 // 3 Second timeout
+			error: function() {
+				$("#modalTitle").html("<b>Details:</b> Error Loading Details");
+				$("#filename").html("<b style=\"color: red;\">Error:</b> File details could not be loaded.");
+			},
+			failure: function() {
+				$("#modalTitle").html("<b>Details:</b> Error loading details");
+				$("#filename").html("<b style=\"color: red;\">Error:</b> File details could not be loaded.");
+			},
+			timeout: 5000 // 5 Second timeout
 		});
 	});
 </script>

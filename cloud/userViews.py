@@ -45,14 +45,22 @@ def file_browser(request):
 
 
 def file_details(request):
-	fm = FileManager(request.user)
-	file_information = {}
-	if 'f' in dict(request.GET) and len(dict(request.GET)['f'][0]) > 0:
-		file_path = dict(request.GET)['f'][0].replace("../", "") # No previous directory browsing
-		file_information = fm.file_details(file_path)
+	if request.method == 'POST':
+		fm = FileManager(request.user)
+		file_information = {}
+		file_path = request.POST.get("filepath", None)
+		if file_path == None:		
+			return HttpResponseNotFound("Missing file")
+		else:
+			file_path = file_path.replace("../", "") # No previous directory browsing
+			file_information = fm.file_details(file_path)
+			if bool(file_information): # Not empty
+				return JsonResponse(file_information)
+			else:
+				return HttpResponseNotFound("Missing file")
 	else:
-		return HttpResponseNotFound("Missing File")
-	return JsonResponse(file_information)
+		# Reject get request
+		return HttpResponseForbidden("Not allowed")
 
 
 def file_download(request):
