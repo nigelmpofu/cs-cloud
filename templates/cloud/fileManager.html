@@ -111,7 +111,7 @@
 					<td><i class="fa fa-minus"></i></td>
 					{% else %}
 					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
-					{% endif %}					
+					{% endif %}
 					<td>
 						<div class="dropdown">
 							<button class="btn btn-default" type="button" data-toggle="dropdown">
@@ -120,7 +120,7 @@
 							<ul class="dropdown-menu">
 								<li class="dropdown-header">Options</li>
 								<li><a data-toggle="modal" data-target="#renameModal" style="cursor: pointer;" data-fp="{{file.filepath}}" data-fn="{{file.filename}}"><i class="fa fa-pencil-square-o" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Rename</a></li>
-								<li><a href=""><i class="fa fa-arrows" style="color: #696969; padding-right: 8px;"></i>&nbsp;Move</a></li>
+								<li><a data-toggle="modal" data-target="#moveModal" style="cursor: pointer;" data-fn="{{file.filename}}" data-fp="{{file.filepath}}"><i class="fa fa-arrows" style="color: #696969; padding-right: 8px;"></i>&nbsp;Move</a></li>
 								{% if file.filetype != "directory" %}
 								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}"><i class="fa fa-info-circle" style="color: #696969; padding-right: 8px;"></i>&nbsp;Details</a></li>
 								{% endif %}
@@ -128,9 +128,8 @@
 								<li><a href="#"><i class="fa fa-share-alt" style="color: #696969; padding-right: 8px;"></i>&nbsp;Sharing</a></li>
 								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
 							</ul>
-						  </div>
 						</div>
-						</td>
+					</td>
 				</tr>
 				{% empty %}
 				<tr>
@@ -144,6 +143,7 @@
 {% include "cloud/alertModal.html" %}
 {% include "cloud/confirmModal.html" %}
 {% include "cloud/fileDetailsModal.html" %}
+{% include "cloud/moveModal.html" %}
 {% include "cloud/renameModal.html" %}
 {% include "cloud/uploadModal.html" %}
 {% include "cloud/mkdirModal.html" %}

@@ -49,6 +49,31 @@ def file_explorer(request):
 
 
 @user_required
+def file_move(request):
+	fm = FileManager(request.user)
+	if request.method == 'GET':
+		# Send directory information
+		mkdir_form = MkdirForm()
+		if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
+			new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
+			fm.update_path(new_path)
+			mkdir_form.initial['dir_path'] = new_path	
+		context = {'dirs': fm.directory_list(False), 'mkdirForm': mkdir_form}
+		fm.update_context_data(context)
+		return render(request, 'cloud/moveExplorer.html', context)
+	elif request.method == 'POST':
+		# Move file to new destination
+		cur_path = request.POST.get("fp", None)
+		move_path = request.POST.get("np", None)
+		if cur_path == None or move_path == None:
+			return JsonResponse({'result': 2, 'message': 'Request Error'})
+		else:
+			return fm.move(cur_path.replace("../", ""), move_path.replace("../", ""))		
+	else:
+		return HttpResponseNotFound("Unknown Request")
+
+
+@user_required
 def trash_explorer(request):
 	user_directory = settings.MEDIA_ROOT + "/" + request.user.user_id
 	user_trash = settings.TRASH_ROOT + "/" + request.user.user_id
@@ -137,7 +162,7 @@ def file_rename(request):
 		rename_form.full_clean()
 		if rename_form.is_valid():
 			fm = FileManager(request.user)
-			if fm.rename(rename_form.cleaned_data['rename_path'], rename_form.cleaned_data['new_name']):
+			if fm.rename(rename_form.cleaned_data['rename_path'].replace("../", ""), rename_form.cleaned_data['new_name'].replace("../", "")):
 				return JsonResponse({'result': 0})
 			else:
 				return JsonResponse({'result': 1})

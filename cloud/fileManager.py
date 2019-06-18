@@ -115,7 +115,7 @@ class FileManager(object):
 			return {}
 
 
-	def directory_list(self):
+	def directory_list(self, includeFiles = True):
 		listing = []
 
 		directories, files = self.user_storage.listdir(self.location)
@@ -132,14 +132,15 @@ class FileManager(object):
 		for directoryname in directories:
 			listing.append(_helper(directoryname, 'directory'))
 
-		mimetypes.init()
-		for filename in files:
-			guessed_mime = mimetypes.guess_type(filename)[0]
-			if(guessed_mime == None):
-				file_mime = "unknown"
-			else:
-				file_mime = str(guessed_mime)
-			listing.append(_helper(filename, file_mime))
+		if includeFiles:
+			mimetypes.init()
+			for filename in files:
+				guessed_mime = mimetypes.guess_type(filename)[0]
+				if(guessed_mime == None):
+					file_mime = "unknown"
+				else:
+					file_mime = str(guessed_mime)
+				listing.append(_helper(filename, file_mime))
 
 		return listing
 
@@ -271,6 +272,22 @@ class FileManager(object):
 			self.user_storage.save(temp_file, ContentFile(''))
 			self.user_storage.delete(temp_file)
 			return True
+
+
+	def move(self, old_path, new_path):
+		"""
+		Moves a given file to the provided destination
+		"""
+		current_path = os.path.join(self.user_storage.path(self.user_directory), old_path)
+		move_path = os.path.join(self.user_storage.path(self.user_directory), new_path)
+		if current_path == move_path:
+			return JsonResponse({"result": 1, "message": "Cannot move '" + current_path.replace(self.user_storage.path(""), "") + "' into itself"}) # Error
+		try:
+			shutil.move(current_path, move_path)
+		except shutil.Error as ex:
+			# Strip user directory location and return error
+			return JsonResponse({"result": 1, "message": str(ex).replace(self.user_storage.path(""), "")}) # Some sort of error
+		return JsonResponse({"result": 0, "message": "success"}) # Success
 
 
 	def rename(self, file_path, new_name):

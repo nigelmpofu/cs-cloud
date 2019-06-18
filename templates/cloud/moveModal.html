@@ -1,0 +1,95 @@
+{% load staticfiles %}
+<div class="modal fade" id="moveModal" role="dialog" tabindex="-1" aria-labelledby="MoveFile" aria-hidden="true">
+	<div class="modal-dialog modal-lg" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title" id="modalTitle">Move File</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<h4 id="currentName"></h4>
+				<iframe id="moveExplorer" src="{% url 'fileMove' %}" style="width: 100%; height: 512px;"></iframe>
+				<input type="hidden" id="mvfp" name="mvfp" value="">
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-success" id="moveBtn">Move</button>
+				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	var mvfp = null;
+	$("#moveBtn").click(function() {
+		var frameUrl = $("#moveExplorer").get(0).contentWindow.location.href;
+		var url = new URL(frameUrl);
+		var currentPath = url.searchParams.get("p");
+		if(currentPath == null) {
+			currentPath = ""; // Root directory
+		}
+		var fileData = {
+			'fp': mvfp,
+			'np': currentPath,
+			'csrfmiddlewaretoken': '{{csrf_token}}'
+		};		
+		$.ajax({
+			type: 'POST',
+			url: "{% url 'fileMove' %}",
+			data: fileData,
+			success: function(data) {
+				if(data.result === 0) {
+					alert("File moved successfully");
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+						window.location.reload();
+					});
+					$("#moveModal").modal('hide');
+					// Close alert after 3 seconds
+					setTimeout(function(){
+						$("#alertOk").click();
+					}, 3000);
+				} else {
+					alert("An error occured while moving file<br/><br/>" + data.message);
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+					});
+					$("#moveModal").modal('hide');
+				}
+			},
+			error: function() {
+				alert("An error occured while moving file");
+				$("#alertOk").one("click", function() {
+					$("#alertModal").modal('hide');
+				});
+				$("#moveModal").modal('hide');
+				// Close alert after 3 seconds
+				setTimeout(function(){
+					$("#alertOk").click();
+				}, 3500);
+			},
+			failure: function() {
+				alert("An error occured while moving file");
+				$("#alertOk").one("click", function() {
+					$("#alertModal").modal('hide');
+				});
+				$("#moveModal").modal('hide');
+				// Close alert after 3 seconds
+				setTimeout(function(){
+					$("#alertOk").click();
+				}, 3500);
+			}
+		});
+	});
+	$('#moveModal').on("shown.bs.modal", function(e) {
+		$("#moveExplorer").attr("src", "{% url 'fileMove' %}"); // Reload iframe
+		$("#currentName").html("Moving: <b>" + $(e.relatedTarget).data('fn') + "</b>");
+		$("#mvfp").val($(e.relatedTarget).data('fp'));
+		mvfp = $(e.relatedTarget).data('fp')		
+	});
+	$("#moveModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		$("#mvfp").val("");
+		mvfp = null;
+		$("#currentName").empty();
+	});
+</script>
