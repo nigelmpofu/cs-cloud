@@ -115,7 +115,7 @@ class FileManager(object):
 			return {}
 
 
-	def directory_list(self, includeFiles = True):
+	def directory_list(self, include_files = True):
 		listing = []
 
 		directories, files = self.user_storage.listdir(self.location)
@@ -132,7 +132,7 @@ class FileManager(object):
 		for directoryname in directories:
 			listing.append(_helper(directoryname, 'directory'))
 
-		if includeFiles:
+		if include_files:
 			mimetypes.init()
 			for filename in files:
 				guessed_mime = mimetypes.guess_type(filename)[0]
