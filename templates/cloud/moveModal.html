@@ -31,7 +31,7 @@
 			'fp': mvfp,
 			'np': currentPath,
 			'csrfmiddlewaretoken': '{{csrf_token}}'
-		};		
+		};
 		$.ajax({
 			type: 'POST',
 			url: "{% url 'fileMove' %}",
@@ -84,7 +84,7 @@
 		$("#moveExplorer").attr("src", "{% url 'fileMove' %}"); // Reload iframe
 		$("#moveName").html("Moving: <b>" + $(e.relatedTarget).data('fn') + "</b>");
 		$("#mvfp").val($(e.relatedTarget).data('fp'));
-		mvfp = $(e.relatedTarget).data('fp')		
+		mvfp = $(e.relatedTarget).data('fp');
 	});
 	$("#moveModal").on("hidden.bs.modal", function() {
 		// Clean up on modal close

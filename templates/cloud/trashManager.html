@@ -64,7 +64,7 @@
 							</button>
 							<ul class="dropdown-menu">
 								<li class="dropdown-header">Options</li>
-								<li><a href="#"><i class="fa fa-arrows" style=" color: #696969; padding-right: 8px;"></i>&nbsp;Restore</a></li>
+								<li><a onclick="restoreItem('{{file.filepath}}');" style=" color: #696969; padding-right: 8px; cursor: pointer;"><i class="fa fa-arrows"></i>&nbsp;Restore</a></li>
 								<li><hr /></li>
 								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
 							</ul>
@@ -135,6 +135,59 @@
 			});
 		});
 	};
+	function restoreItem(filepath) {
+		var fileData = {
+			'fp': filepath,			
+			'csrfmiddlewaretoken': '{{csrf_token}}'
+		};
+		$.ajax({
+			type: 'POST',
+			url: "{% url 'fileRestore' %}",
+			data: fileData,
+			success: function(data) {
+				if(data.result === 0) {
+					alert("Restored successfully to:<br/>" + data.location);
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+						window.location.reload();
+					});
+					$("#moveModal").modal('hide');
+					// Close alert after 3 seconds
+					setTimeout(function(){
+						$("#alertOk").click();
+					}, 3000);
+				} else {
+					alert("An error occured while moving file<br/><br/>" + data.message);
+					$("#alertOk").one("click", function() {
+						$("#alertModal").modal('hide');
+					});
+					$("#moveModal").modal('hide');
+				}
+			},
+			error: function() {
+				alert("An error occured while moving file");
+				$("#alertOk").one("click", function() {
+					$("#alertModal").modal('hide');
+				});
+				$("#moveModal").modal('hide');
+				// Close alert after 3 seconds
+				setTimeout(function(){
+					$("#alertOk").click();
+				}, 3500);
+			},
+			failure: function() {
+				alert("An error occured while moving file");
+				$("#alertOk").one("click", function() {
+					$("#alertModal").modal('hide');
+				});
+				$("#moveModal").modal('hide');
+				// Close alert after 3 seconds
+				setTimeout(function(){
+					$("#alertOk").click();
+				}, 3500);
+			}
+		});
+	}
 	function confirmEmptyTrash() {
 		// Deletion confirmation modal
 		$("#confirmModal").modal('show');

@@ -95,6 +95,7 @@ def trash_explorer(request):
 	context = {'files': fm.trash_list()}
 	return render(request, 'cloud/trashManager.html', context)
 
+
 def file_browser(request):
 	# Todo: file handling, sharing and security
 	return HttpResponse("File: " + request.GET.get("f"))
@@ -126,6 +127,19 @@ def file_delete_perm(request):
 	else:
 		# Get not allowed
 		return HttpResponseForbidden("Not allowed")
+
+def file_restore(request):
+	if request.method == 'POST':
+		file_path = request.POST.get("fp", None)
+		if file_path == None:
+			return HttpResponseNotFound("Missing file")
+		else:
+			file_path = file_path.replace("../", "") # No previous directory browsing
+			fm = FileManager(request.user)
+			return fm.restore_item(file_path)
+	else:
+		# Get not allowed
+		return HttpResponseForbidden("Not allowed")	
 
 
 def empty_trash(request):

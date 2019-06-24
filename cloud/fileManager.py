@@ -23,6 +23,16 @@ def file_size_formatted(file_size):
 		file_size /= 1024.0
 	return "%3.1f %s" % (file_size, 'TB')
 
+def get_directory_size(file_path):
+	"""
+	Returns the total size take up by a given directory in bytes
+	"""
+	total_size = 0
+	for path, dirs, files in os.walk(file_path):
+		for f in files:
+			fp = os.path.join(path, f)
+			total_size += os.path.getsize(fp)
+	return total_size
 
 def md5_checksum(filename):
 	md5_hash = hashlib.md5()
@@ -175,8 +185,16 @@ class FileManager(object):
 
 
 	def delete_item(self, item_path):
+		res_path = item_path
+		i = 0
 		try:
 			delete_path = os.path.join(self.user_storage.path(self.user_directory), item_path)
+			while os.path.exists(self.trash_storage.path(os.path.basename(res_path))):
+				i = i + 1
+				res_path = str(i) + "_" + os.path.basename(item_path)
+				new_delete_path = os.path.join(self.user_storage.path(self.user_directory), res_path)
+				os.rename(delete_path, new_delete_path)
+				delete_path = new_delete_path
 		except Exception:
 			return HttpResponseNotFound("File not found")
 		# Move to trash
@@ -191,7 +209,6 @@ class FileManager(object):
 		except Exception:
 			return HttpResponseNotFound("File not found")
 		# Permanantly delete file
-		print(delete_path)
 		if os.path.isdir(delete_path):
 			shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
 		else:
@@ -233,6 +250,26 @@ class FileManager(object):
 		shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
 		os.mkdir(delete_path)
 		return JsonResponse({'result': 0})
+
+
+	def restore_item(self, item_path):
+		res_path = item_path
+		i = 0
+		try:
+			restore_path = os.path.join(self.trash_storage.path(self.user_trash), item_path)
+			user_dir_path = os.path.join(self.user_storage.path(self.user_directory))
+			# Rename if item already exists
+			while os.path.exists(self.user_storage.path(res_path)):
+				i = i + 1
+				res_path = str(i) + "_" + item_path
+				new_restore_path = os.path.join(self.trash_storage.path(self.user_trash), res_path)
+				os.rename(restore_path, new_restore_path)
+				restore_path = new_restore_path
+		except Exception:
+			return HttpResponseNotFound("File not found")
+		# Move item back to user directory
+		res_location = shutil.move(restore_path, user_dir_path)
+		return JsonResponse({'result': 0, 'location': res_location.replace(self.user_storage.path(""), "")})
 
 
 	def download_file(self, filename):

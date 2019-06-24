@@ -49,6 +49,7 @@ urlpatterns = [
 	path('file/download/', userViews.file_download, name="fileDownload"),
 	path('file/move/', userViews.file_move, name="fileMove"),
 	path('file/rename/', userViews.file_rename, name="fileRename"),
+	path('file/restore/', userViews.file_restore, name="fileRestore"),
 	path('file/upload/', userViews.file_upload, name="fileUpload"),
 	path('file/upload/checkQuota/', userViews.check_quota, name="checkQuota"),
 	path('file/mkdir/', userViews.create_directory, name="createDirectory"),
