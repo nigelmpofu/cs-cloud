@@ -79,7 +79,7 @@
 									<th>User Count</th>
 									<th>Users</th>
 									<th>Delete</th>
-									<th><i class="fa fa-trash-o" data-toggle="tooltip" title="Multiple Delete" style="font-size: 14pt"></i></th>									
+									<th><i class="fa fa-trash-o" data-toggle="tooltip" title="Multiple Delete" style="font-size: 14pt"></i></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -89,8 +89,8 @@
 									<td data-id="usercount">{{ group.num_users }}</td>
 									<td>
 										<button type="button" name="users" class='btn btn-primary btn-xs rounded-circle edit'
-												data-toggle="modal" data-target="#editModal"
-												data-csrf='{{ csrf_token }}' data-pk="{{ group.pk }}"><i class="fa fa-group" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="{{ group.name }} Users"></i></button>
+												data-toggle="modal" data-target="#groupEditModal"
+												data-csrf='{{ csrf_token }}' data-pk="{{ group.pk }}" data-gnm="{{group.name}}"><i class="fa fa-group" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="{{ group.name }} Users"></i></button>
 									</td>
 									<td>
 										<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteGroup('{{group.pk}}')"><i class="fa fa-trash-o" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ group.name }}?"></i></button>
@@ -111,7 +111,7 @@
 </div>
 {% include "cloud/alertModal.html" %}
 {% include "cloud/confirmModal.html" %}
-{% include "cloud/userEditModal.html" %}
+{% include "cloud/groupEditModal.html" %}
 <script src="{% static '/js/validation.js' %}"></script>
 <script type="text/javascript">
 	groupTable = null;
@@ -224,7 +224,7 @@
 		groupTable = $("#groups").DataTable({
 			paging: true,
 			"pageLength": 25,
-			"columns": [				
+			"columns": [
 				{ "orderable": true, "searchable": true }, // group name
 				{ "orderable": true, "searchable": true }, // user count
 				{ "orderable": false, "searchable": false }, // users button
@@ -238,7 +238,7 @@
 		var token = $(this).data("csrf");
 		$("input:checked.multiRemove").each(function() {
 			if (this.checked) {
-				toDelete.push({"pk": $(this).data("pk")});				
+				toDelete.push({"pk": $(this).data("pk")});
 			}
 		});
 		var toDeleteMessage = "Are you sure you want to delete these groups:<br/>";

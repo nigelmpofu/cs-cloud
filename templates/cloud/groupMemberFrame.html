@@ -1,0 +1,118 @@
+{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% block extrahead %}
+	<title>Group Memebers - CS Cloud</title>
+	<style>
+		.cscbrowser {
+			position: absolute;
+			left: 16px;
+			right: 16px;
+		}
+		th {
+			text-align: center;
+		}
+	</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="cscbrowser">
+	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
+		<table id='gmembers' class="table table-striped table-bordered">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Title</th>
+					<th>Initials</th>
+					<th style="display: none;">First Name</th>
+					<th>Surname</th>
+					<th>Email</th>
+					<th>Remove</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for member in members.select_related.all %}
+				<tr id="user_id-{{member.user.pk}}">
+					<td data-id="user_id">{{member.user.user_id}}</td>
+					<td data-id="title">{{member.user.title}}</td>
+					<td data-id="initials" >{{member.user.initials}}</td>
+					<td data-id="fname" style="display: none;">{{member.user.name}}</td>
+					<td data-id="surname">{{member.user.surname}}</td>
+					<td data-id="email">{{member.user.email}}</td>
+					<td style="text-align: center;">
+						<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteGroup('{{member.group.pk}}', '{{member.user.user_id}}');"><i class="fa fa-trash-o" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Remove from {{member.group.name}}?"></i></button>
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table><br/>
+		<button type="button" name="adduser" id="adduserbtn" class='btn btn-primary pull-left' data-pk="" data-toggle="modal" data-target="#addGroupUserModal">Add User</button>
+	</div>
+</div>
+{% include "cloud/alertModal.html" %}
+{% include "cloud/confirmModal.html" %}
+{% include "cloud/addGroupUserModal.html" %}
+<script type="text/javascript">
+	groupTable = null;
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
+		$('.navbar').empty(); // Remove navbar
+		groupTable = $("#gmembers").DataTable({
+			paging: true,
+			"pageLength": 25,
+			"columns": [
+				{ "orderable": true, "searchable": true }, // user_id
+				{ "orderable": false, "searchable": false }, // title
+				{ "orderable": false, "searchable": true }, // initials
+				{ "orderable": false, "searchable": true }, // first name (hidden)
+				{ "orderable": true, "searchable": true }, // surname
+				{ "orderable": false, "searchable": true }, // email
+				{ "orderable": false, "searchable": false } // delete button
+			]
+		});		
+		var url = new URL(window.location.href);
+		var gid = url.searchParams.get("gid");
+		if(gid == null) {
+			gid = "";
+		}
+		$("#adduserbtn").attr("data-pk", gid);
+	});
+	window.alert = function(message) {
+		// Alert window override
+		$("#alertModal").modal('show');
+		$("#alertMsg").html(message);
+	};
+	function confirmDelete(msg, delData) {
+		// Deletion confirmation modal
+		$("#confirmModal").modal('show');
+		$("#confirmMsg").html(msg);
+		$("#confirmYes").unbind().one("click", function() {
+			$("#confirmModal").modal('hide');
+			$.ajax({
+				type: 'POST',
+				url: "{% url 'removeGroupMember' %}",
+				data: delData,
+				success: function() {
+					// Remove record from table
+					$("#gmembers > tbody > tr#user_id-" + delData.uid).fadeOut(500, function() {
+						groupTable.row('#user_id-' + delData.uid).remove().draw(false);
+					});
+				},
+				error: function() {
+					alert("An error occured during removal operation");
+				},
+				failure: function() {
+					alert("An error occured during removal operation");
+				}
+			});
+		});
+	};
+	function deleteGroup(groupID, userID) {
+		var toDeleteMessage = "Are you sure you want to remove the user from the group?";
+		var data = {
+			'gid': groupID,
+			'uid': userID,
+			'csrfmiddlewaretoken': '{{csrf_token}}'
+		};		
+		confirmDelete(toDeleteMessage, data);
+	}
+</script>
+{% endblock %}

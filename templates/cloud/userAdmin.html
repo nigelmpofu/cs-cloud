@@ -118,7 +118,7 @@
 										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
 											   data-pk="{{ user.pk }}" data-toggle="tooltip" title="Delete {{ user.user_id }}?">
 									</td>
-									<td><i class="fa fa-cog" data-toggle="tooltip" title="{{ user.user_id }}'s groups"></i></td>
+									<td data-toggle="modal" data-target="#userGroupModal" data-usr="{{user.user_id}}"><i class="fa fa-cog" data-toggle="tooltip" title="{{ user.user_id }}'s groups"></i></td>
 								</tr>
 								{% endfor %}
 							</tbody>
@@ -134,6 +134,7 @@
 {% include "cloud/alertModal.html" %}
 {% include "cloud/confirmModal.html" %}
 {% include "cloud/userEditModal.html" %}
+{% include "cloud/userGroupModal.html" %}
 <script src="{% static '/js/validation.js' %}"></script>
 <script type="text/javascript">
 	userTable = null;

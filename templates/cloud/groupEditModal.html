@@ -1,0 +1,30 @@
+{% load staticfiles %}
+<div class="modal fade" id="groupEditModal" role="dialog" tabindex="-1" aria-labelledby="GroupMembers" aria-hidden="true">
+	<div class="modal-dialog modal-lg" role="dialog">
+		<div class="modal-content text-center">
+			<div class="modal-header">
+				<h4 class="modal-title" id="gemodalTitle">Group Members: ...</h4>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+			</div>
+			<div class="modal-body" data-keyboard="false">
+				<iframe id="userGroupsFrm" src="" style="width: 100%; height: 512px;"></iframe>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" id="closeBtn" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$("#groupEditModal").on("hidden.bs.modal", function() {
+		// Clean up on modal close
+		document.getElementById('userGroupsFrm').src = "";
+		window.location.reload();
+	});
+	$('#groupEditModal').on("shown.bs.modal", function(e) {
+		var gid = $(e.relatedTarget).data('pk');
+		var gname = $(e.relatedTarget).data('gnm');
+		document.getElementById('userGroupsFrm').src = "{%url 'listGroupMembers'%}?gid=" + gid;
+		$("#gemodalTitle").html(gname + " Members");
+	});
+</script>

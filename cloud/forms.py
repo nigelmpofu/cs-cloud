@@ -127,3 +127,11 @@ class GroupForm(forms.Form):
 		max_length=32,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'groupname', 'placeholder': 'Group Name', 'autocomplete': 'off',
 								'onchange': 'checkGroup()', 'oninput': 'resetGroup()'}))
+
+
+class GroupMemberForm(forms.Form):
+	username = forms.CharField(
+		label="Username",
+		max_length = 32,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'username', 'placeholder': 'Username', 'autocomplete': 'off'}))
+	gid = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'gid'}), required=False)

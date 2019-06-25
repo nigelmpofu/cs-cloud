@@ -57,7 +57,7 @@ def file_move(request):
 		if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 			new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 			fm.update_path(new_path)
-			mkdir_form.initial['dir_path'] = new_path	
+			mkdir_form.initial['dir_path'] = new_path
 		context = {'dirs': fm.directory_list(False), 'mkdirForm': mkdir_form}
 		fm.update_context_data(context)
 		return render(request, 'cloud/moveExplorer.html', context)
@@ -68,7 +68,7 @@ def file_move(request):
 		if cur_path == None or move_path == None:
 			return JsonResponse({'result': 2, 'message': 'Request Error'})
 		else:
-			return fm.move(cur_path.replace("../", ""), move_path.replace("../", ""))		
+			return fm.move(cur_path.replace("../", ""), move_path.replace("../", ""))
 	else:
 		return HttpResponseNotFound("Unknown Request")
 
@@ -148,7 +148,7 @@ def empty_trash(request):
 		return fm.empty_trash()
 	else:
 		# Get not allowed
-		return HttpResponseForbidden("Not allowed")		
+		return HttpResponseForbidden("Not allowed")
 
 
 def file_details(request):
@@ -227,7 +227,7 @@ def create_directory(request):
 		mkdir_form.full_clean()
 		if mkdir_form.is_valid():
 			fm = FileManager(request.user)
-			fm.update_path(mkdir_form.cleaned_data['dir_path'])			
+			fm.update_path(mkdir_form.cleaned_data['dir_path'])
 			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
 			if mkdir_status:
 				return JsonResponse({'result': 0})

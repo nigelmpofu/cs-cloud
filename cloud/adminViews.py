@@ -12,9 +12,9 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template import loader
 from .tokens import tokenizer
-from .forms import GroupForm, UserForm
+from .forms import GroupForm, GroupMemberForm, UserForm
 from .mailer import send_password_request_email
-from .models import Group, User
+from .models import Group, User, UserGroup
 from .views import reset_password
 
 @admin_required
@@ -32,8 +32,8 @@ def user_admin(request):
 @admin_required
 def group_admin(request):
 	if request.user.is_staff:
-		group_form = GroupForm()		
-		groups = Group.objects.annotate(num_users=Count('usergroup'))
+		group_form = GroupForm()
+		groups = Group.objects.annotate(num_users=Count('group'))
 		context = {'groupForm': group_form, 'groups': groups}
 		return render(request, 'cloud/groupAdmin.html', context)
 	else:
@@ -61,7 +61,7 @@ def new_group(request):
 					messages.error(request, "Error: Group could not be created")
 				else:
 					messages.success(request, "Group created successfully")
-			except Exception as ex:				
+			except Exception as ex:
 				messages.error(request, "Error: Group could not be created<br/>" + str(ex))
 		else:
 			messages.error(request, "There was a problem processing your form<br/>Please check that it is filled in correctly.")
@@ -83,6 +83,80 @@ def delete_group(request):
 		else:
 			# You don't get it
 			return HttpResponseForbidden()
+	else:
+		return redirect("fileExplorer")
+
+@admin_required
+def list_group(request):
+	if request.user.is_staff:
+		user_groups = None
+		try:
+			user_groups = UserGroup.objects.filter(user=User(user_id=request.GET.get("uid")))
+		except UserGroup.DoesNotExist:
+			user_groups = None
+		context = {'members': user_groups}
+		return render(request, 'cloud/userGroupFrame.html', context)
+	else:
+		return redirect("fileExplorer")
+
+
+@admin_required
+def add_group_member(request):
+	if request.user.is_staff:
+		guser_form = GroupMemberForm(request.POST)
+		guser_form.full_clean()
+		if guser_form.is_valid():
+			new_username = guser_form.cleaned_data['username']
+			cur_group_id = guser_form.cleaned_data['gid']
+			if not User.objects.filter(user_id=new_username).exists():
+				return JsonResponse({'result': 2}) # User not found
+			else:
+				user = get_object_or_404(User, user_id=new_username)
+				group = get_object_or_404(Group, pk=cur_group_id)
+				if UserGroup.objects.filter(user=user, group=group).exists():
+					return JsonResponse({'result': 1}) # User already in group
+				else:
+					# Add user to group
+					usrgroup = UserGroup.objects.create(user=user, group=group)
+					if not usrgroup:
+						return JsonResponse({'result': 3}) # Error
+					else:
+						return JsonResponse({'result': 0}) # Success
+		else:
+			return JsonResponse({'result': 3}) # Error
+	else:
+		return JsonResponse({'result': 3}) # Error
+
+
+@admin_required
+def remove_group_member(request):
+	if request.user.is_staff:
+		if request.method == "POST":
+			user_id = request.POST.get("uid", None)
+			group_id = request.POST.get("gid", None)
+			if user_id is None or group_id is None:
+				return HttpResponseForbidden("Request Error")
+			else:
+				usergroup = get_object_or_404(UserGroup, user=User(user_id=user_id), group=Group(pk=group_id))
+				usergroup.delete()
+				# Removal complete
+				return HttpResponse()
+		else:
+			return HttpResponseForbidden("Request Error")
+	else:
+		return HttpResponseForbidden("Request Error")
+
+
+@admin_required
+def list_members(request):
+	if request.user.is_staff:
+		group_members = None
+		try:
+			group_members = UserGroup.objects.filter(group=Group(pk=request.GET.get("gid")))
+		except UserGroup.DoesNotExist:
+			group_members = None
+		context = {'members': group_members, 'gmemberForm': GroupMemberForm()}
+		return render(request, 'cloud/groupMemberFrame.html', context)
 	else:
 		return redirect("fileExplorer")
 

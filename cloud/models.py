@@ -95,5 +95,5 @@ class Group(models.Model):
 
 
 class UserGroup(models.Model):
-	group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False)
-	user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+	group = models.ForeignKey(Group, related_name="group", on_delete=models.CASCADE, null=False)
+	user = models.ForeignKey(User, related_name="user", on_delete=models.CASCADE, null=False)
