@@ -1,0 +1,262 @@
+{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% load mathfilters %}
+{% block extrahead %}
+	<title>Group Admin - CS Cloud</title>
+	<style>
+	a {
+		font-family: sans-serif;
+		color: #303030
+	}
+	p {
+		padding-left: 5px;
+		font-size: 16pt
+	}
+	th, td {
+		text-align: center;
+	}
+	.accordion .card-header:after {
+		font-family: 'FontAwesome';
+		font-size: 17pt;
+		content: "\f068";
+		float:right
+	}
+	.accordion .card-header.collapsed:after {
+		content: "\f067"
+	}
+	#remove {
+		color: white;
+	}
+</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="container">
+	<div class="shadow p-4 mb-4 bg-white" style="border-radius: 25px;">
+		{% if messages %}
+		{% for message in messages %}
+		<div class="alert alert-{{ message.tags }}"><strong>{{ message|safe }}</strong></div>
+		<hr class="my-4">
+		{% endfor %}
+		{% endif %}
+		<div id="accordion" class="accordion">
+			<div class="card mb-0" style="border-radius: 25px;">
+				<div class="card-header collapsed" data-toggle="collapse" href="#collapseOne">
+					<a class="card-title">
+						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">Group Registration</p>
+					</a>
+				</div>
+				<div id="collapseOne" class="collapse collapse" data-parent="#accordion">
+					<div class="card-body">
+						<form action="{% url 'submitGroup' %}" method="post" onsubmit="return validateGroupForm();" class="form-horizontal user-form" id="groupForm" role="form">
+							{% csrf_token %}
+							{{ groupForm }}
+							<label id="availStat-{{ groupForm.groupname.html_name }}" hidden>unknown</label><br/>
+							<div class="form-group">
+								<!-- Submit Button -->
+								<div class="col-sm-offset-2 col-sm-10">
+									<button type="submit" class="save btn btn-primary" id="submitUser">Create Group</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Maintain Groups -->
+		<div id="accordion2" class="accordion" style="padding-top: 8px;">
+			<div class="card mb-0" style="border-radius: 25px;">
+				<div class="card-header collapsed" data-toggle="collapse" href="#collapseTwo">
+					<a class="card-title">
+						<p style="font-family: arial; font-size: 19pt; display: inline;" align="center">Maintain Groups</p>
+					</a>
+				</div>
+				<div id="collapseTwo" class="collapse collapse" data-parent="#accordion2">
+					<div class="card-body" style="overflow-x: auto;">
+						<table id='groups' class="table table-striped table-bordered">
+							<thead>
+								<tr>
+									<th>Group Name</th>
+									<th>User Count</th>
+									<th>Users</th>
+									<th>Delete</th>
+									<th><i class="fa fa-trash-o" data-toggle="tooltip" title="Multiple Delete" style="font-size: 14pt"></i></th>									
+								</tr>
+							</thead>
+							<tbody>
+								{% for group in groups %}
+								<tr id="group_id-{{ group.pk }}">
+									<td id="gname">{{ group.name }}</td>
+									<td data-id="usercount">{{ group.num_users }}</td>
+									<td>
+										<button type="button" name="users" class='btn btn-primary btn-xs rounded-circle edit'
+												data-toggle="modal" data-target="#editModal"
+												data-csrf='{{ csrf_token }}' data-pk="{{ group.pk }}"><i class="fa fa-group" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="{{ group.name }} Users"></i></button>
+									</td>
+									<td>
+										<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteGroup('{{group.pk}}')"><i class="fa fa-trash-o" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ group.name }}?"></i></button>
+									</td>
+									<td>
+										<input type="checkbox" class="multiRemove" data-pk="{{ group.pk }}" data-toggle="tooltip" title="Delete {{ group.name }}?">
+									</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table><br/>
+						<button type="button" name="remove" id="remove" class='btn btn-warning pull-left' data-csrf="{{csrf_token}}" data-pk="{{ group.pk }}">Delete Selected Groups</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% include "cloud/alertModal.html" %}
+{% include "cloud/confirmModal.html" %}
+{% include "cloud/userEditModal.html" %}
+<script src="{% static '/js/validation.js' %}"></script>
+<script type="text/javascript">
+	groupTable = null;
+	/*
+	Function to check if the entered group name is available for use
+	*/
+	function checkGroup() {
+		checkAvail("{{ groupForm.groupname.html_name }}");
+	}
+	function resetGroup() {
+		resetField("{{ groupForm.groupname.html_name }}");
+	}
+	function resetField(id) {
+		$("#" + id).removeAttr("style");
+		$("#" + id).removeAttr("data-toggle");
+		$("#" + id).removeAttr("title");
+		$("#availStat-" + id).text("unknown");
+	}
+	function checkAvail(id) {
+		if(!$.trim($("#" + id).val()).length) {
+			return; // Textbox blank
+		}
+
+		$.ajax({
+			url: "{% url 'checkGroup' %}",
+			type: "POST",
+			async: true,
+			data: {'data': 'gn', 'query': $.trim($("#" + id).val()),
+				'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').prop('value')},
+			dataType: "json",
+			success: function (data) {
+				if(data.result === 0) { // Available
+					$("#" + id).attr("style", "background-color: #387C44; color: white");
+					$("#" + id).attr("data-toggle", "tooltip");
+					$("#" + id).attr("title", "Available");
+					$("#availStat-" + id).text("true");
+				}  else {
+					$("#" + id).attr("style", "background-color: #C04000; color: white");
+					$("#" + id).attr("data-toggle", "tooltip");
+					$("#" + id).attr("title", "Already in use");
+					$("#availStat-" + id).text("false");
+				}
+			},
+			failure: function () {
+				$("#availStat-" + id).text("fail");
+			},
+			error: function () {
+				$("#availStat-" + id).text("error");
+			},
+			timeout: 3000 // 3 Second timeout
+		});
+	}
+	function confirmDelete(msg, accData, deleteList, uncheck) {
+		// Deletion confirmation modal
+		$("#confirmModal").modal('show');
+		$("#confirmMsg").html(msg);
+		$("#confirmYes").unbind().one("click", function() {
+			$("#confirmModal").modal('hide');
+			$.ajax({
+				type: 'POST',
+				url: "{% url 'adminDeleteGroup' %}",
+				data: accData,
+				success: function() {
+					$.each(deleteList, function(index, value) {
+						if(uncheck) {
+							$("input:checked.multiRemove").each(function() {
+								if (this.checked) {
+									this.checked = false; // Uncheck deleted
+								}
+							});
+						}
+						// Delete groups(s) from table
+						$("#groups > tbody > tr#group_id-" + value).fadeOut(500, function() {
+							groupTable.row('#group_id-' + value).remove().draw(false);
+						});
+					});
+				},
+				error: function() {
+					alert("An error occured during group deletion");
+				},
+				failure: function() {
+					alert("An error occured during group deletion");
+				}
+			});
+		});
+	};
+	window.alert = function(message) {
+		// Alert window override
+		$("#alertModal").modal('show');
+		$("#alertMsg").html(message);
+	};
+	function getGName(groupId) {
+		return $("#groups > tbody > tr#group_id-" + groupId + " > td#gname").text();
+	}
+	function deleteGroup(groupId) {
+		var toDelete = [];
+		var token = "{{csrf_token}}";
+		toDelete.push(groupId);
+		if(toDelete.length > 0) {
+			toDeleteMessage = "Are you sure you want to delete the following group:<br/><br/><b>" + getGName(groupId) + "</b>";
+			var data = {
+				'toDelete': toDelete,
+				'csrfmiddlewaretoken': token
+			};
+			confirmDelete(toDeleteMessage, data, toDelete, false);
+		}
+	}
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
+		groupTable = $("#groups").DataTable({
+			paging: true,
+			"pageLength": 25,
+			"columns": [				
+				{ "orderable": true, "searchable": true }, // group name
+				{ "orderable": true, "searchable": true }, // user count
+				{ "orderable": false, "searchable": false }, // users button
+				{ "orderable": false, "searchable": false }, // delete button
+				{ "orderable": false, "searchable": false } // delete checkbox
+			]
+		});
+	});
+	$("#remove").on("click", function () {
+		var toDelete = [];
+		var token = $(this).data("csrf");
+		$("input:checked.multiRemove").each(function() {
+			if (this.checked) {
+				toDelete.push({"pk": $(this).data("pk")});				
+			}
+		});
+		var toDeleteMessage = "Are you sure you want to delete these groups:<br/>";
+		var toDeleteList = [];
+		$.each(toDelete, function(index, value) {
+			toDeleteMessage += "<b>" + getGName(value.pk) + "</b><br/>";
+			toDeleteList.push(value.pk);
+		});
+		if(toDeleteList.length > 0) {
+			var data = {
+				'toDelete': toDeleteList,
+				'csrfmiddlewaretoken': token
+			};
+			confirmDelete(toDeleteMessage, data, toDeleteList, true);
+		} else {
+			var deleteWarningMessage = "Please select at least one group to delete";
+			alert(deleteWarningMessage);
+		}
+	});
+</script>
+{% endblock context %}

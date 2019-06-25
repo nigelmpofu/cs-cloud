@@ -119,3 +119,11 @@ class RenameForm(forms.Form):
 		max_length = 32,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'new_name', 'placeholder': 'New Name', 'autocomplete': 'off'}))
 	rename_path = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+
+class GroupForm(forms.Form):
+	groupname = forms.CharField(
+		label="Group Name",
+		max_length=32,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'groupname', 'placeholder': 'Group Name', 'autocomplete': 'off',
+								'onchange': 'checkGroup()', 'oninput': 'resetGroup()'}))

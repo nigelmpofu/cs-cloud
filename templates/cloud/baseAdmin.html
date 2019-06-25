@@ -9,6 +9,7 @@
 			<ul class="navbar-nav ml-auto">
 				<li class="nav-item {% if request.resolver_match.url_name == "fileExplorer" %}active{% endif %}"><a class="nav-link" href="{% url 'fileExplorer' %}">My Files</a></li>
 				<li class="nav-item {% if request.resolver_match.url_name == "userAdmin" %}active{% endif %}"><a class="nav-link" href="{% url 'userAdmin' %}">User Admin</a></li>
+				<li class="nav-item {% if request.resolver_match.url_name == "groupAdmin" %}active{% endif %}"><a class="nav-link" href="{% url 'groupAdmin' %}">Group Admin</a></li>
 				<li class="nav-item {% if request.resolver_match.url_name == "diskUsage" %}active{% endif %}"><a class="nav-link" href="{% url 'diskUsage' %}">Disk Usage</a></li>
 				<li class="nav-item {% if request.resolver_match.url_name == "logout" %}active{% endif %}"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
 			</ul>

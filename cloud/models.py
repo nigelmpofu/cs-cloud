@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+import math
 
 class UserManager(BaseUserManager):
 	def create_user(self, email, password, name, surname, **kwargs):
@@ -66,7 +67,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 	def get_remaining_quota(self):
 		"""Returns the remaining available quota."""
-		return self.disk_quota - self.used_quota
+		if self.disk_quota == 0:
+			# Unlimited storage
+			return math.inf
+		else:
+			return self.disk_quota - self.used_quota
 
 
 def get_user_directory(instance, filename):
@@ -83,3 +88,12 @@ class UserData(models.Model):
 	def filename(self):
 		fname = self.data.name.split("/")[1].replace('_',' ').replace('-',' ')
 		return fname
+
+
+class Group(models.Model):	
+	name = models.CharField(max_length=32, default="new_group")
+
+
+class UserGroup(models.Model):
+	group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False)
+	user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)

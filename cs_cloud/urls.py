@@ -31,6 +31,10 @@ urlpatterns = [
 	
 	# Admin URL
 	path('admin/diskUsage/', adminViews.disk_usage, name="diskUsage"),
+	path('admin/groupAdmin/', adminViews.group_admin, name="groupAdmin"),
+	path('admin/groupAdmin/checkGroup/', adminViews.check_group, name="checkGroup"),
+	path('admin/groupAdmin/deleteGroup/', adminViews.delete_group, name="adminDeleteGroup"),
+	path('admin/groupAdmin/newGroup/', adminViews.new_group, name="submitGroup"),
 	path('admin/userAdmin/', adminViews.user_admin, name="userAdmin"),
 	path('admin/userAdmin/submitUser/', adminViews.submit_user, name="submitUser"),
 	path('admin/userAdmin/checkUser/', adminViews.check_user, name="checkUser"),

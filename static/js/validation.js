@@ -74,3 +74,13 @@ function validateUserForm(studentID = true) {
 
 	return true; // Data valid
 }
+
+function validateGroupForm() {
+	var name = $("#groupname").val();
+	
+	if(name == null || name == "") {
+		alert("Please fill in all fields");
+		return false;
+	}
+	return true; // Data valid
+}

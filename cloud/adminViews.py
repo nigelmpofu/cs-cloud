@@ -5,14 +5,16 @@ from smtplib import SMTPException
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
+from django.db.models import Count
 from cloud.decorators.adminRequired import admin_required
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template import loader
 from .tokens import tokenizer
-from .forms import UserForm
+from .forms import GroupForm, UserForm
 from .mailer import send_password_request_email
-from .models import User
+from .models import Group, User
 from .views import reset_password
 
 @admin_required
@@ -24,6 +26,64 @@ def user_admin(request):
 		return render(request, 'cloud/userAdmin.html', context)
 	else:
 		# Just incase
+		return redirect("fileExplorer")
+
+
+@admin_required
+def group_admin(request):
+	if request.user.is_staff:
+		group_form = GroupForm()		
+		groups = Group.objects.annotate(num_users=Count('usergroup'))
+		context = {'groupForm': group_form, 'groups': groups}
+		return render(request, 'cloud/groupAdmin.html', context)
+	else:
+		# Just incase
+		return redirect("fileExplorer")
+
+
+@admin_required
+def new_group(request):
+	if request.method == 'POST':
+		group_form = GroupForm(request.POST)
+		group_form.full_clean()
+		if group_form.is_valid():
+			# Form valid
+			post_name = group_form.cleaned_data['groupname']
+
+			# Check if group available
+			if Group.objects.filter(name=post_name).exists():
+				messages.error(request, "Error: The group is already taken")
+				return redirect("groupAdmin")
+
+			try:
+				group = Group.objects.create(name=post_name)
+				if not group:
+					messages.error(request, "Error: Group could not be created")
+				else:
+					messages.success(request, "Group created successfully")
+			except Exception as ex:				
+				messages.error(request, "Error: Group could not be created<br/>" + str(ex))
+		else:
+			messages.error(request, "There was a problem processing your form<br/>Please check that it is filled in correctly.")
+	else:
+		messages.error(request, "There was an error processing your request")
+	return redirect("groupAdmin")
+
+
+@admin_required
+def delete_group(request):
+	if request.user.is_staff:
+		if request.method == 'POST':
+			groups_to_delete = request.POST.getlist("toDelete[]")
+			for group_id in groups_to_delete:
+				group = get_object_or_404(Group, pk=group_id)
+				group.delete()
+			# Deletion complete
+			return HttpResponse()
+		else:
+			# You don't get it
+			return HttpResponseForbidden()
+	else:
 		return redirect("fileExplorer")
 
 
@@ -70,7 +130,7 @@ def submit_user(request):
 		user_form = UserForm(request.POST)
 		user_form.full_clean()
 		if user_form.is_valid():
-			# Form valid			
+			# Form valid
 			post_user_id = user_form.cleaned_data['user_id']
 			post_title = user_form.cleaned_data['title']
 			post_initials = user_form.cleaned_data['initials']
@@ -127,7 +187,7 @@ def check_user(request):
 		"""
 		search_data = request.POST.get("data", "")
 		search_query = request.POST.get("query", None)
-		if search_data == "ui":			
+		if search_data == "ui":
 			if User.objects.filter(user_id=search_query).exists():
 				return JsonResponse({'result': 1})
 			else:				
@@ -142,6 +202,36 @@ def check_user(request):
 				else:
 					# Email not valid
 					return JsonResponse({'result': 2})
+		else:
+			# Request error
+			return JsonResponse({'result': -1})
+	else:
+		# Get request not allowed
+		return JsonResponse({'result': -1})
+
+
+"""
+Check if a given group already exists
+"""
+@admin_required
+def check_group(request):
+	if request.method == 'POST':
+		"""
+		Data to search
+		data = 'gn' for group name
+		everything else is an error
+
+		Return
+		0 - Available
+		1 - Not Available
+		"""
+		search_data = request.POST.get("data", "")
+		search_query = request.POST.get("query", None)
+		if search_data == "gn":
+			if Group.objects.filter(name=search_query).exists():
+				return JsonResponse({'result': 1})
+			else:
+				return JsonResponse({'result': 0})
 		else:
 			# Request error
 			return JsonResponse({'result': -1})

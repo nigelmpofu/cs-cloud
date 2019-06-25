@@ -89,6 +89,7 @@
 									<th>Edit</th>
 									<th>Delete</th>
 									<th><i class="fa fa-trash-o" data-toggle="tooltip" title="Multiple Delete" style="font-size: 14pt"></i></th>
+									<th><i class="fa fa-group" data-toggle="tooltip" title="Groups" style="font-size: 14pt"></i></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -111,12 +112,13 @@
 												data-pk="{{ user.pk }}"><i class="fa fa-pencil" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Edit {{ user.user_id }}"></i></button>
 									</td>
 									<td style="text-align: center;">
-										<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteUser('{{ user.user_id}}')"><i class="fa fa-trash-o" style="color: whire; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></button>
+										<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="deleteUser('{{ user.user_id}}')"><i class="fa fa-trash-o" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Delete {{ user.user_id }}?"></i></button>
 									</td>
 									<td style="text-align: center;">
 										<input type="checkbox" class="multiRemove" data-id="{{ user.user_id }}"
 											   data-pk="{{ user.pk }}" data-toggle="tooltip" title="Delete {{ user.user_id }}?">
 									</td>
+									<td><i class="fa fa-cog" data-toggle="tooltip" title="{{ user.user_id }}'s groups"></i></td>
 								</tr>
 								{% endfor %}
 							</tbody>
@@ -270,7 +272,8 @@
 				{ "orderable": false, "searchable": false }, // disk quota (hidden)
 				{ "orderable": false, "searchable": false }, // edit button
 				{ "orderable": false, "searchable": false }, // delete button
-				{ "orderable": false, "searchable": false } // delete checkbox
+				{ "orderable": false, "searchable": false }, // delete checkbox
+				{ "orderable": false, "searchable": false } // user groups
 			],
 			"initComplete": function () {
 				// Hook update user buttons
