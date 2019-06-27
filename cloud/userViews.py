@@ -1,4 +1,5 @@
 import os
+import uuid
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
@@ -9,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
 from .forms import GroupForm, LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, UserShareForm
 from .mailer import send_password_request_email
-from .models import Group, User, UserGroup
+from .models import Group, PublicShare, User, UserGroup
 from .fileManager import FileManager
 
 @user_required
@@ -269,6 +270,43 @@ def user_share(request):
 	else:
 		return HttpResponseForbidden()
 
-
+@user_required
 def public_share(request):
-	return HttpResponse()
+	if request.method == 'POST':
+		if 'lst' not in request.POST:
+			if PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
+				# Delete link
+				try:
+					share_url = PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", ""))
+					share_url.delete()
+				except Exception:
+					return JsonResponse({'result': 2})
+				return JsonResponse({'result': 1})
+			else:
+				# Share
+				new_url = str(uuid.uuid4().hex[:16]) # Generate unique link
+				try:
+					user = get_object_or_404(User, user_id=request.user.pk)
+					new_share = PublicShare.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url)
+					if new_share:
+						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
+					else:
+						return JsonResponse({'result': 2})
+				except Exception as ex:					
+					return JsonResponse({'result': 2})
+		else:
+			# Return share list			
+			if PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
+				share_url = PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", flat=True)[0]
+				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url)})
+			else:
+				return JsonResponse({'result': 1})
+	else:
+		return HttpResponseForbidden()
+
+
+def public_access(request, share_url):
+	if not PublicShare.objects.filter(url=share_url).exists():
+		return HttpResponseNotFound()
+	else:
+		return HttpResponse()

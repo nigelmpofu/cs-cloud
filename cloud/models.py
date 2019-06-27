@@ -97,3 +97,9 @@ class Group(models.Model):
 class UserGroup(models.Model):
 	group = models.ForeignKey(Group, related_name="group", on_delete=models.CASCADE, null=False)
 	user = models.ForeignKey(User, related_name="user", on_delete=models.CASCADE, null=False)
+
+
+class PublicShare(models.Model):
+	url = models.CharField(max_length=32, primary_key=True)
+	owner = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+	path = models.CharField(max_length=256, default="", null=False)

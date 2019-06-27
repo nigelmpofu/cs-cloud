@@ -72,7 +72,11 @@
 							<tbody></tbody>
 						</table>
 					</div>
-					<div class="tab-pane fade" id="pills-public" role="tabpanel" aria-labelledby="pills-public-tab">Public Share</div>
+					<div class="tab-pane fade" id="pills-public" role="tabpanel" aria-labelledby="pills-public-tab">
+						<h4><u>Public Link</u></h4>
+						<a id="sharelink" href="" target="_blank" style="font-size: 16pt;"><b>http://cloud.cs.up.ac.za/s/link</b></a><i id="linkcopy" onclick="copyLink();" class="fa fa-clone" style="cursor: pointer; padding-left: 8px; padding-bottom: 16px; font-size: 16pt;" data-toggle="tooltip" title="Copy Link"></i><br/>
+						<button type="button" class="btn btn-primary" id="pubShareBtn" onclick="publicShare()">Share</button>
+					</div>
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -84,6 +88,7 @@
 <script type="text/javascript">
 	var groupTable = null;
 	var userTable = null;
+	var filePath = "";
 	$(document).ready(function() {
 		$(document).ajaxStart(function() {
 			$("#waitOverlay").fadeIn(300);
@@ -100,10 +105,42 @@
 		userTable.destroy();
 		groupTable = null;
 		userTable = null;
+		filePath = "";
 	});
 	$('#shareModal').on("shown.bs.modal", function(e) {
 		$("#shmodalTitle").html("<b>Share:</b> " + $(e.relatedTarget).data('fn'));
-		var filePath = $(e.relatedTarget).data('fp');
+		filePath = $(e.relatedTarget).data('fp');
+		$.ajax({
+			url: "{% url 'publicShare' %}",
+			type: "POST",
+			async: true,
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath, 'lst': 0},
+			dataType: "json",
+			success: function(data) {
+				if(data.result === 0) {
+					$("#sharelink").text(data.sharelink);
+					$("#sharelink").attr("href", data.sharelink);
+					$("#linkcopy").show();
+					$("#pubShareBtn").text("Delete Link");	
+				} else {
+					$("#sharelink").text("--- Not Shared ---");
+					$("#sharelink").removeAttr("href");
+					$("#linkcopy").hide();
+					$("#pubShareBtn").text("Share");
+				}
+			},
+			error: function() {
+				$("#sharelink").text("Error: Link could not be retrieved");
+				$("#sharelink").removeAttr("href");
+				$("#linkcopy").hide();
+			},
+			failure: function() {
+				$("#sharelink").text("Error: Link could not be retrieved");
+				$("#sharelink").removeAttr("href");
+				$("#linkcopy").hide();
+			},
+			timeout: 5000 // 5 Second timeout
+		});
 		groupTable = $("#groupshare").DataTable({
 			paging: true,
 			"pageLength": 10,
@@ -152,5 +189,58 @@
 	});
 	function unshare(uid) {
 		alert("removing " + uid);
+	}
+	function publicShare() {
+		$.ajax({
+			url: "{% url 'publicShare' %}",
+			type: "POST",
+			async: true,
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath},
+			dataType: "json",
+			success: function(data) {
+				if(data.result === 0) {
+					$("#sharelink").text(data.sharelink);
+					$("#sharelink").attr("href", data.sharelink);
+					$("#linkcopy").show();
+					$("#pubShareBtn").text("Delete Link");
+				} else if(data.result === 1) {
+					$("#sharelink").text("--- Not Shared ---");
+					$("#sharelink").removeAttr("href");
+					$("#linkcopy").hide();
+					$("#pubShareBtn").text("Share");
+				} else {
+					$("#sharelink").text("Error: File could not be shared");
+					$("#sharelink").removeAttr("href");
+					$("#linkcopy").hide();
+					$("#pubShareBtn").text("Share");
+				}
+			},
+			error: function() {
+				$("#sharelink").text("Error: Link could not be retrieved");
+				$("#sharelink").removeAttr("href");
+				$("#linkcopy").hide();
+			},
+			failure: function() {
+				$("#sharelink").text("Error: Link could not be retrieved");
+				$("#sharelink").removeAttr("href");
+				$("#linkcopy").hide();
+			},
+			timeout: 5000 // 5 Second timeout
+		});
+	}
+	function copyLink() {		
+		// Create new element
+		var el = document.createElement('textarea');
+		el.value = $('#sharelink').text();
+		// Set non-editable to avoid focus and move outside of view
+		el.setAttribute('readonly', '');
+		el.style = {position: 'absolute', left: '-9999px'};
+		document.body.appendChild(el);
+		// Select text inside element
+		el.select();
+		// Copy text to clipboard
+		document.execCommand('copy');
+		// Remove temporary element
+		document.body.removeChild(el);
 	}
 </script>

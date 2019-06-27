@@ -63,5 +63,8 @@ urlpatterns = [
 	path('file/mkdir/', userViews.create_directory, name="createDirectory"),
 	path('file/gshare/', userViews.group_share, name="groupShare"),
 	path('file/ushare/', userViews.user_share, name="userShare"),
-	path('file/pshare/', userViews.public_share, name="publicShare")
+	path('file/pshare/', userViews.public_share, name="publicShare"),
+
+	# Publib Link
+	path('s/<str:share_url>/', userViews.public_access, name="publicAccess")
 ]
