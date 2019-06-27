@@ -25,8 +25,53 @@
 				</ul>
 				<hr>
 				<div class="tab-content" id="pills-tabContent">
-					<div class="tab-pane fade show active" id="pills-user" role="tabpanel" aria-labelledby="pills-user-tab">User Share</div>
-					<div class="tab-pane fade" id="pills-group" role="tabpanel" aria-labelledby="pills-group-tab">Group Share</div>
+					<div class="tab-pane fade show active" id="pills-user" role="tabpanel" aria-labelledby="pills-user-tab">
+						<form action="{% url 'userShare' %}" method="post" class="form-horizontal user-form" id="usershareForm" role="form">
+							{% csrf_token %}
+							{{ usershareForm }}
+							<label id="availStat-{{ usershareForm.username.html_name }}" hidden>unknown</label><br/>
+							<div class="form-group">
+								<button type="submit" class="save btn btn-primary" id="submitUser">Share</button>
+							</div>
+						</form>
+						<hr>
+						<h5> --- Shared with --- </h5>
+						<table id='usershare' class="table table-striped table-bordered">
+							<thead>
+								<tr>
+									<th>Username</th>
+									<th>Title</th>
+									<th>Initials</th>
+									<th style="display: none;">First Name</th>
+									<th>Surname</th>
+									<th>Email</th>
+									<th>Unshare</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="tab-pane fade" id="pills-group" role="tabpanel" aria-labelledby="pills-group-tab">
+						<form action="{% url 'groupShare' %}" method="post" class="form-horizontal user-form" id="groupshareForm" role="form">
+							{% csrf_token %}
+							{{ groupshareForm }}
+							<label id="availStat-{{ groupshareForm.groupname.html_name }}" hidden>unknown</label><br/>
+							<div class="form-group">
+								<button type="submit" class="save btn btn-primary" id="submitUser">Share</button>
+							</div>
+						</form>
+						<hr>
+						<h5> --- Shared with --- </h5>
+						<table id='groupshare' class="table table-striped table-bordered" style="width: 100%";>
+							<thead>
+								<tr>
+									<th>Group Name</th>
+									<th>Unshare</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
 					<div class="tab-pane fade" id="pills-public" role="tabpanel" aria-labelledby="pills-public-tab">Public Share</div>
 				</div>
 			</div>
@@ -37,6 +82,8 @@
 	</div>
 </div>
 <script type="text/javascript">
+	var groupTable = null;
+	var userTable = null;
 	$(document).ready(function() {
 		$(document).ajaxStart(function() {
 			$("#waitOverlay").fadeIn(300);
@@ -48,35 +95,62 @@
 	$("#shareModal").on("hidden.bs.modal", function() {
 		// Clean up on modal close
 		$("#shmodalTitle").html("Share: ...");
-		$("#md5checksum").html("");
-		$("#filename").html("");
-		$("#filesize").html("");
-		$("#filemodified").html("");
+		// Clear datatables
+		groupTable.destroy();
+		userTable.destroy();
+		groupTable = null;
+		userTable = null;
 	});
 	$('#shareModal').on("shown.bs.modal", function(e) {
+		$("#shmodalTitle").html("<b>Share:</b> " + $(e.relatedTarget).data('fn'));
 		var filePath = $(e.relatedTarget).data('fp');
-		$.ajax({
-			url: "{% url 'fileDetails' %}",
-			type: "POST",
-			async: true,
-			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath},
-			dataType: "json",
-			success: function(data) {
-				$("#shmodalTitle").html("<b>Share:</b> " + data.filename);
-				$("#md5checksum").html("<b>MD5:</b> " + data.md5checksum);
-				$("#filename").html("<b>Filename:</b> " + data.filename);
-				$("#filesize").html("<b>File Size:</b> " + data.filesize);
-				$("#filemodified").html("<b>Modified:</b> " + new Date(data.filedate ).toUTCString().replace(/ GMT$/, ""));
+		groupTable = $("#groupshare").DataTable({
+			paging: true,
+			"pageLength": 10,
+			ajax: {
+				url: "{% url 'groupShare' %}",
+				type: "POST",
+				async: true,
+				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'lst': 0},
+				dataType: "json",
+				dataSrc: ""
 			},
-			error: function() {
-				$("#shmodalTitle").html("<b>Share:</b> Error Loading Details");
-				$("#filename").html("<b style=\"color: red;\">Error:</b> File details could not be loaded.");
+			"columns": [
+				{ data: "fields.name", "orderable": true, "searchable": true }, // group name
+				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\');"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.fields.name+'?"></i></button>';
+					}
+				} // delete button
+			],
+			destroy: true
+		});
+		userTable = $("#usershare").DataTable({
+			paging: true,
+			"pageLength": 10,
+			ajax: {
+				url: "{% url 'userShare' %}",
+				type: "POST",
+				async: true,
+				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'lst': 0},
+				dataType: "json",
+				dataSrc: ""
 			},
-			failure: function() {
-				$("#shmodalTitle").html("<b>Share:</b> Error loading details");
-				$("#filename").html("<b style=\"color: red;\">Error:</b> File details could not be loaded.");
-			},
-			timeout: 5000 // 5 Second timeout
+			"columns": [
+				{ data: "pk", "orderable": true, "searchable": true }, // user_id
+				{ data: "fields.title", "orderable": false, "searchable": false }, // title
+				{ data: "fields.initials", "orderable": false, "searchable": true }, // initials
+				{ data: "fields.name", "orderable": false, "searchable": true, visible: false }, // first name (hidden)
+				{ data: "fields.surname", "orderable": true, "searchable": true }, // surname
+				{ data: "fields.email", "orderable": false, "searchable": true }, // email
+				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\');"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.pk+'?"></i></button>';
+					}
+				} // delete button
+			],
+			destroy: true
 		});
 	});
+	function unshare(uid) {
+		alert("removing " + uid);
+	}
 </script>

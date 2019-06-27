@@ -61,4 +61,7 @@ urlpatterns = [
 	path('file/upload/', userViews.file_upload, name="fileUpload"),
 	path('file/upload/checkQuota/', userViews.check_quota, name="checkQuota"),
 	path('file/mkdir/', userViews.create_directory, name="createDirectory"),
+	path('file/gshare/', userViews.group_share, name="groupShare"),
+	path('file/ushare/', userViews.user_share, name="userShare"),
+	path('file/pshare/', userViews.public_share, name="publicShare")
 ]

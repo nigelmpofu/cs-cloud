@@ -125,7 +125,7 @@
 								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}"><i class="fa fa-info-circle" style="color: #696969; padding-right: 8px;"></i>&nbsp;Details</a></li>
 								{% endif %}
 								<li><hr /></li>
-								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#shareModal" data-fp="{{file.filepath}}"><i class="fa fa-share-alt" style="color: #696969; padding-right: 8px;"></i>&nbsp;Sharing</a></li>
+								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#shareModal" data-fn="{{file.filename}}" data-fp="{{file.filepath}}"><i class="fa fa-share-alt" style="color: #696969; padding-right: 8px;"></i>&nbsp;Sharing</a></li>
 								<li><a onclick="confirmDelete('{{file.filename}}', '{{file.filepath}}');" style="color: red; cursor: pointer;"><i class="fa fa-trash" style="color: #696969; padding-right: 8px;"></i>&nbsp;Delete</a></li>
 							</ul>
 						</div>

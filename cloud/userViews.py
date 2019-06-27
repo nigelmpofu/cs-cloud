@@ -2,13 +2,14 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
+from django.core import serializers
 from cloud.decorators.userRequired import user_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .tokens import tokenizer
-from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm
+from .forms import GroupForm, LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, UserShareForm
 from .mailer import send_password_request_email
-from .models import User
+from .models import Group, User, UserGroup
 from .fileManager import FileManager
 
 @user_required
@@ -38,12 +39,15 @@ def file_explorer(request):
 	mkdir_form = MkdirForm()
 	rename_form = RenameForm()
 	upload_form = UploadForm()
+	usershare_from = UserShareForm()
+	groupshare_form = GroupForm()
 	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 		new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 		fm.update_path(new_path)
 		mkdir_form.initial['dir_path'] = new_path
 		upload_form.initial['upload_path'] = new_path
-	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form, 'renameForm': rename_form}
+	context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form, 'renameForm': rename_form,
+				'usershareForm': usershare_from, 'groupshareForm': groupshare_form}
 	fm.update_context_data(context)
 	return render(request, 'cloud/fileManager.html', context)
 
@@ -238,3 +242,33 @@ def create_directory(request):
 	else:
 		# No get allowed
 		return HttpResponseForbidden("Invalid Request")
+
+
+def group_share(request):
+	if request.method == 'POST':
+		if 'lst' not in request.POST:
+			# Share
+			pass
+		else:
+			# Return share list
+			json_data = serializers.serialize('json', Group.objects.all(), fields=('name'))
+			return HttpResponse(json_data, content_type='application/json')
+	else:
+		return HttpResponseForbidden()
+
+
+def user_share(request):
+	if request.method == 'POST':
+		if 'lst' not in request.POST:
+			# Share
+			pass
+		else:
+			# Return share list
+			json_data = serializers.serialize('json', User.objects.all(), fields=('title','initials','name','surname','email'))
+			return HttpResponse(json_data, content_type='application/json')
+	else:
+		return HttpResponseForbidden()
+
+
+def public_share(request):
+	return HttpResponse()

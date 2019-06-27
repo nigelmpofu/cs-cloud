@@ -103,7 +103,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # SESSION AGE 30 Minutes
+# User automatically logged out after 30 minutes of inactivity
+# Or if they close their browser
 SESSION_COOKIE_AGE = 30 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
