@@ -163,7 +163,12 @@ def list_members(request):
 
 @admin_required
 def disk_usage(request):
-	return HttpResponse("Disk Usage")
+	if request.user.is_staff:
+		context = {}
+		return render(request, 'cloud/diskUsage.html', context)
+	else:
+		# Just incase
+		return redirect("fileExplorer")
 
 
 def create_new_user(request, user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
