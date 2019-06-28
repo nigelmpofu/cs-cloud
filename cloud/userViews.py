@@ -7,10 +7,11 @@ from django.core import serializers
 from cloud.decorators.userRequired import user_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.crypto import get_random_string
 from .tokens import tokenizer
 from .forms import GroupForm, LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, UserShareForm
 from .mailer import send_password_request_email
-from .models import Group, PublicShare, User, UserGroup
+from .models import Group, GroupShare, PublicShare, User, UserGroup, UserShare
 from .fileManager import FileManager
 
 @user_required
@@ -247,12 +248,54 @@ def create_directory(request):
 
 def group_share(request):
 	if request.method == 'POST':
-		if 'lst' not in request.POST:
+		if 'lst' not in request.POST and 'del' not in request.POST:
 			# Share
-			pass
+			group_form = GroupForm(request.POST)
+			group_form.full_clean()
+			if group_form.is_valid():
+				# Form valid
+				group_name = group_form.cleaned_data['groupname']
+				# Check if group available
+				if Group.objects.filter(name=group_name).exists():
+					# Share to group
+					try:
+						user = get_object_or_404(User, user_id=request.user.pk)
+						grup = get_object_or_404(Group, name=group_name)
+						if GroupShare.objects.filter(owner=user, group=grup, path=request.POST.get("fp", "")).exists():
+							return JsonResponse({'result': 2})
+						else:
+							group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""))
+							if not group_shr:
+								return JsonResponse({'result': 1})
+							else:
+								# Email group members -----------
+								return JsonResponse({'result': 0}) # Success
+					except Exception as ex:
+						return JsonResponse({'result': 3})
+				else:
+					# Group does not exist
+					return JsonResponse({'result': 1})
+			else:
+				return JsonResponse({'result': 3}) # Error
+		elif 'del' in request.POST:
+			# Unshare
+			group_id = request.POST.get("del", None)
+			if group_id is None:
+				return JsonResponse({'result': 1}) # Error
+			else:
+				try:
+					grup = get_object_or_404(Group, pk=group_id)
+					sharer = get_object_or_404(User, user_id=request.user.pk)
+					groupshare = get_object_or_404(GroupShare, owner=sharer, group=grup, path=request.POST.get("fp", ""))
+					groupshare.delete()
+					# Removal complete
+					return JsonResponse({'result': 0})
+				except Exception as ex:					
+					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			json_data = serializers.serialize('json', Group.objects.all(), fields=('name'))
+			group_share_list = GroupShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("group")
+			json_data = serializers.serialize('json', Group.objects.filter(pk__in=group_share_list), fields=('name'))
 			return HttpResponse(json_data, content_type='application/json')
 	else:
 		return HttpResponseForbidden()
@@ -260,12 +303,57 @@ def group_share(request):
 
 def user_share(request):
 	if request.method == 'POST':
-		if 'lst' not in request.POST:
+		if 'lst' not in request.POST and 'del' not in request.POST:
 			# Share
-			pass
+			user_form = UserShareForm(request.POST)
+			user_form.full_clean()
+			if user_form.is_valid():
+				# Form valid
+				user_name = user_form.cleaned_data['username']
+				# Check if group available
+				if User.objects.filter(user_id=user_name).exists():
+					# Share to user
+					try:
+						user = get_object_or_404(User, user_id=user_name)
+						sharer = get_object_or_404(User, user_id=request.user.pk)
+						if sharer == user:
+							return JsonResponse({'result': 3}) # Cannot share with yourself
+						else:
+							if UserShare.objects.filter(owner=sharer, shared_with=user, path=request.POST.get("fp", "")).exists():
+								return JsonResponse({'result': 2})
+							else:
+								user_shr = UserShare.objects.create(owner=sharer, shared_with=user, path=request.POST.get("fp", ""))
+								if not user_shr:
+									return JsonResponse({'result': 1})
+								else:
+									# Email user -----------
+									return JsonResponse({'result': 0}) # Success
+					except Exception as ex:
+						return JsonResponse({'result': 4})
+				else:
+					# User does not exist
+					return JsonResponse({'result': 1})
+			else:
+				return JsonResponse({'result': 4}) # Error
+		elif 'del' in request.POST:
+			# Unshare
+			users_id = request.POST.get("del", None)
+			if users_id is None:
+				return JsonResponse({'result': 1}) # Error
+			else:
+				try:
+					user = get_object_or_404(User, user_id=users_id)
+					sharer = get_object_or_404(User, user_id=request.user.pk)
+					usershare = get_object_or_404(UserShare, owner=sharer, shared_with=user, path=request.POST.get("fp", ""))
+					usershare.delete()
+					# Removal complete
+					return JsonResponse({'result': 0})
+				except Exception as ex:
+					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			json_data = serializers.serialize('json', User.objects.all(), fields=('title','initials','name','surname','email'))
+			user_share_list = UserShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("shared_with")
+			json_data = serializers.serialize('json', User.objects.filter(user_id__in=user_share_list), fields=('title','initials','name','surname','email'))
 			return HttpResponse(json_data, content_type='application/json')
 	else:
 		return HttpResponseForbidden()
@@ -284,7 +372,8 @@ def public_share(request):
 				return JsonResponse({'result': 1})
 			else:
 				# Share
-				new_url = str(uuid.uuid4().hex[:16]) # Generate unique link
+				#new_url = str(uuid.uuid4().hex[:16]) # Generate unique link
+				new_url = str(get_random_string(length=12)) # Random share link
 				try:
 					user = get_object_or_404(User, user_id=request.user.pk)
 					new_share = PublicShare.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url)
@@ -292,10 +381,10 @@ def public_share(request):
 						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
 					else:
 						return JsonResponse({'result': 2})
-				except Exception as ex:					
+				except Exception as ex:
 					return JsonResponse({'result': 2})
 		else:
-			# Return share list			
+			# Return share list
 			if PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
 				share_url = PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", flat=True)[0]
 				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url)})
@@ -307,6 +396,6 @@ def public_share(request):
 
 def public_access(request, share_url):
 	if not PublicShare.objects.filter(url=share_url).exists():
-		return HttpResponseNotFound()
+		return render(request, 'cloud/e404.html') # 404
 	else:
 		return HttpResponse()

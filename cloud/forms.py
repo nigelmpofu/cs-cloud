@@ -141,5 +141,5 @@ class UserShareForm(forms.Form):
 	username = forms.CharField(
 		label="Username",
 		max_length=32,
-		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'groupname', 'placeholder': 'Username', 'autocomplete': 'off',
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'username', 'placeholder': 'Username', 'autocomplete': 'off',
 								'onchange': 'checkUser()', 'oninput': 'resetUser()'}))

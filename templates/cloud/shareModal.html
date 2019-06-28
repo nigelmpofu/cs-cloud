@@ -29,7 +29,11 @@
 						<form action="{% url 'userShare' %}" method="post" class="form-horizontal user-form" id="usershareForm" role="form">
 							{% csrf_token %}
 							{{ usershareForm }}
+							<p style="color: grey; font-size: 9pt;"><i>Note: Usernames are case sensitive</i></p>
 							<label id="availStat-{{ usershareForm.username.html_name }}" hidden>unknown</label><br/>
+							<div class="infosection" style="padding-top: 24px;">
+								<h3 id="userStatus"></h3>
+							</div>
 							<div class="form-group">
 								<button type="submit" class="save btn btn-primary" id="submitUser">Share</button>
 							</div>
@@ -55,7 +59,11 @@
 						<form action="{% url 'groupShare' %}" method="post" class="form-horizontal user-form" id="groupshareForm" role="form">
 							{% csrf_token %}
 							{{ groupshareForm }}
+							<p style="color: grey; font-size: 9pt;"><i>Note: Group names are case sensitive</i></p>
 							<label id="availStat-{{ groupshareForm.groupname.html_name }}" hidden>unknown</label><br/>
+							<div class="infosection" style="padding-top: 24px;">
+								<h3 id="groupStatus"></h3>
+							</div>
 							<div class="form-group">
 								<button type="submit" class="save btn btn-primary" id="submitUser">Share</button>
 							</div>
@@ -74,7 +82,7 @@
 					</div>
 					<div class="tab-pane fade" id="pills-public" role="tabpanel" aria-labelledby="pills-public-tab">
 						<h4><u>Public Link</u></h4>
-						<a id="sharelink" href="" target="_blank" style="font-size: 16pt;"><b>http://cloud.cs.up.ac.za/s/link</b></a><i id="linkcopy" onclick="copyLink();" class="fa fa-clone" style="cursor: pointer; padding-left: 8px; padding-bottom: 16px; font-size: 16pt;" data-toggle="tooltip" title="Copy Link"></i><br/>
+						<a id="sharelink" href="" target="_blank" style="font-size: 16pt;"><b>http://cloud.cs.up.ac.za/s/share</b></a><i id="linkcopy" onclick="copyLink();" class="fa fa-clone" style="cursor: pointer; padding-left: 8px; padding-bottom: 16px; font-size: 16pt;" data-toggle="tooltip" title="Copy Link"></i><br/>
 						<button type="button" class="btn btn-primary" id="pubShareBtn" onclick="publicShare()">Share</button>
 					</div>
 				</div>
@@ -89,6 +97,8 @@
 	var groupTable = null;
 	var userTable = null;
 	var filePath = "";
+	var gshareStatus = $('#groupStatus');
+	var ushareStatus = $('#userStatus');
 	$(document).ready(function() {
 		$(document).ajaxStart(function() {
 			$("#waitOverlay").fadeIn(300);
@@ -106,10 +116,97 @@
 		groupTable = null;
 		userTable = null;
 		filePath = "";
+		gshareStatus.empty();
+		ushareStatus.empty();
+		$("#{{ groupshareForm.groupname.html_name }}").val("");
+		$("#{{ usershareForm.username.html_name }}").val("");
 	});
 	$('#shareModal').on("shown.bs.modal", function(e) {
 		$("#shmodalTitle").html("<b>Share:</b> " + $(e.relatedTarget).data('fn'));
 		filePath = $(e.relatedTarget).data('fp');
+		$("#groupshareForm").ajaxForm({
+			url: '{% url 'groupShare' %}',
+			data: {'fp': filePath},
+			type: 'post',
+			beforeSend: function(xhr) {
+				if($("#{{ groupshareForm.groupname.html_name }}").val() == '') {
+					gshareStatus.empty();
+					gshareStatus.html("Group Name Required");
+					$("#{{ groupshareForm.groupname.html_name }}").focus();
+					xhr.abort();
+					return false; // Abort send
+				} else {
+					gshareStatus.empty();
+					return true; // Send
+				}
+			},
+			complete: function(data) {
+				var jsonResponse = JSON.parse(data.responseText);
+				if(jsonResponse.result === 0) {
+					gshareStatus.html("Shared Successfully");
+					$("#{{ groupshareForm.groupname.html_name }}").val("");
+					groupTable.ajax.reload();
+					setTimeout(function() {gshareStatus.empty();}, 1500);
+				} else if(jsonResponse.result === 1) {
+					gshareStatus.html("Error: Group not found");
+					$("#{{ groupshareForm.groupname.html_name }}").select();
+				} else if(jsonResponse.result === 2) {
+					gshareStatus.html("Already shared with group");
+					$("#{{ groupshareForm.groupname.html_name }}").select();
+				} else {
+					gshareStatus.html("Error sharing file");
+				}
+			},
+			failure: function() {
+				gshareStatus.html("File sharing failed");
+			},
+			error: function() {
+				gshareStatus.html("File sharing error");
+			}
+		});
+		$("#usershareForm").ajaxForm({
+			url: '{% url 'userShare' %}',
+			data: {'fp': filePath},
+			type: 'post',
+			beforeSend: function(xhr) {
+				if($("#{{ usershareForm.username.html_name }}").val() == '') {
+					ushareStatus.empty();
+					ushareStatus.html("Username Required");
+					$("#{{ usershareForm.username.html_name }}").focus();
+					xhr.abort();
+					return false; // Abort send
+				} else {
+					ushareStatus.empty();
+					return true; // Send
+				}
+			},
+			complete: function(data) {
+				var jsonResponse = JSON.parse(data.responseText);
+				if(jsonResponse.result === 0) {
+					ushareStatus.html("Shared Successfully");
+					$("#{{ usershareForm.username.html_name }}").val("");
+					userTable.ajax.reload();
+					setTimeout(function() {ushareStatus.empty();}, 1500);
+				} else if(jsonResponse.result === 1) {
+					ushareStatus.html("Error: User not found");
+					$("#{{ usershareForm.username.html_name }}").select();
+				} else if(jsonResponse.result === 2) {
+					ushareStatus.html("Already shared with user");
+					$("#{{ usershareForm.username.html_name }}").select();
+				} else if(jsonResponse.result === 3) {
+					ushareStatus.html("Error: Cannot share file with yourself");
+					$("#{{ usershareForm.username.html_name }}").select();
+				} else {
+					ushareStatus.html("Error sharing file");
+				}
+			},
+			failure: function() {
+				ushareStatus.html("File sharing failed");
+			},
+			error: function() {
+				ushareStatus.html("File sharing error");
+			}
+		});
 		$.ajax({
 			url: "{% url 'publicShare' %}",
 			type: "POST",
@@ -148,14 +245,14 @@
 				url: "{% url 'groupShare' %}",
 				type: "POST",
 				async: true,
-				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'lst': 0},
+				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'fp': filePath, 'lst': 0},
 				dataType: "json",
 				dataSrc: ""
 			},
 			"columns": [
 				{ data: "fields.name", "orderable": true, "searchable": true }, // group name
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\');"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.fields.name+'?"></i></button>';
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\', 1);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.fields.name+'?"></i></button>';
 					}
 				} // delete button
 			],
@@ -168,7 +265,7 @@
 				url: "{% url 'userShare' %}",
 				type: "POST",
 				async: true,
-				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'lst': 0},
+				data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'fp': filePath, 'lst': 0},
 				dataType: "json",
 				dataSrc: ""
 			},
@@ -180,15 +277,65 @@
 				{ data: "fields.surname", "orderable": true, "searchable": true }, // surname
 				{ data: "fields.email", "orderable": false, "searchable": true }, // email
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\');"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.pk+'?"></i></button>';
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\', 0);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.pk+'?"></i></button>';
 					}
 				} // delete button
 			],
 			destroy: true
 		});
 	});
-	function unshare(uid) {
-		alert("removing " + uid);
+	function unshare(sid, stype) {
+		// stype
+		// 0 - user
+		// 1 group
+		uurl = "";
+		if(stype == 0) {
+			$.ajax({
+			url: "{% url 'userShare' %}",
+			type: "POST",
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'fp': filePath, 'del': sid},
+			dataType: "json",
+			success: function(data) {
+				if(data.result === 0) {
+					userTable.ajax.reload();
+					ushareStatus.empty();
+				} else {
+					ushareStatus.html("Unsharing operation failed");
+				}
+			},
+			error: function() {
+				ushareStatus.html("Unsharing operation failed");
+			},
+			failure: function() {
+				ushareStatus.html("Unsharing operation failed");
+			},
+			timeout: 5000 // 5 Second timeout
+		});
+		} else if(stype == 1) {
+			$.ajax({
+			url: "{% url 'groupShare' %}",
+			type: "POST",
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'fp': filePath, 'del': sid},
+			dataType: "json",
+			success: function(data) {
+				if(data.result === 0) {
+					groupTable.ajax.reload();
+					gshareStatus.empty();
+				} else {
+					gshareStatus.html("Unsharing operation failed");
+				}
+			},
+			error: function() {
+				gshareStatus.html("Unsharing operation failed");
+			},
+			failure: function() {
+				gshareStatus.html("Unsharing operation failed");
+			},
+			timeout: 5000 // 5 Second timeout
+		});
+		} else {
+			alert("Unshare error");
+		}		
 	}
 	function publicShare() {
 		$.ajax({
@@ -219,28 +366,31 @@
 				$("#sharelink").text("Error: Link could not be retrieved");
 				$("#sharelink").removeAttr("href");
 				$("#linkcopy").hide();
+				$("#pubShareBtn").text("Share");
 			},
 			failure: function() {
 				$("#sharelink").text("Error: Link could not be retrieved");
 				$("#sharelink").removeAttr("href");
 				$("#linkcopy").hide();
+				$("#pubShareBtn").text("Share");
 			},
 			timeout: 5000 // 5 Second timeout
 		});
-	}
-	function copyLink() {		
+	}	
+	function copyLink() {
 		// Create new element
 		var el = document.createElement('textarea');
 		el.value = $('#sharelink').text();
-		// Set non-editable to avoid focus and move outside of view
-		el.setAttribute('readonly', '');
-		el.style = {position: 'absolute', left: '-9999px'};
 		document.body.appendChild(el);
-		// Select text inside element
 		el.select();
 		// Copy text to clipboard
 		document.execCommand('copy');
 		// Remove temporary element
 		document.body.removeChild(el);
 	}
+	// Placeholder functions to be implemented later
+	function checkGroup() {}
+	function checkUser() {}
+	function resetGroup() {}
+	function resetUser() {}
 </script>

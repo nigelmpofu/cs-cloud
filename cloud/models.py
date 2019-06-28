@@ -103,3 +103,13 @@ class PublicShare(models.Model):
 	url = models.CharField(max_length=32, primary_key=True)
 	owner = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 	path = models.CharField(max_length=256, default="", null=False)
+
+class UserShare(models.Model):
+	owner = models.ForeignKey(User, related_name="owner", on_delete=models.CASCADE, null=False)
+	shared_with = models.ForeignKey(User, related_name="recepient", on_delete=models.CASCADE, null=False)
+	path = models.CharField(max_length=256, default="", null=False)
+
+class GroupShare(models.Model):
+	owner = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+	group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False)
+	path = models.CharField(max_length=256, default="", null=False)
