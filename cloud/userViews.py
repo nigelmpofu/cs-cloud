@@ -10,7 +10,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.crypto import get_random_string
 from .tokens import tokenizer
 from .forms import GroupForm, LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, UserShareForm
-from .mailer import send_password_request_email
+from .mailer import send_password_request_email, send_share_email
 from .models import Group, GroupShare, PublicShare, User, UserGroup, UserShare
 from .fileManager import FileManager
 
@@ -261,22 +261,33 @@ def group_share(request):
 					try:
 						user = get_object_or_404(User, user_id=request.user.pk)
 						grup = get_object_or_404(Group, name=group_name)
-						if GroupShare.objects.filter(owner=user, group=grup, path=request.POST.get("fp", "")).exists():
-							return JsonResponse({'result': 2})
-						else:
-							group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""))
-							if not group_shr:
-								return JsonResponse({'result': 1})
+						# Check if user is a group member
+						if UserGroup.objects.filter(group=grup, user=user).exists():
+							if GroupShare.objects.filter(owner=user, group=grup, path=request.POST.get("fp", "")).exists():
+								return JsonResponse({'result': 2})
 							else:
-								# Email group members -----------
-								return JsonResponse({'result': 0}) # Success
+								group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""))
+								if not group_shr:
+									return JsonResponse({'result': 1})
+								else:
+									# Email group members
+									grup_members = UserGroup.objects.filter(group=grup)
+									for member in grup_members:
+										if member.user != user:
+											# Do not email myself
+											print(member.user)
+											send_share_email(member.user.email, member.user.name, member.user.surname, user.name, user.surname,
+												user.user_id, request.POST.get("fn", ""))
+									return JsonResponse({'result': 0}) # Success
+						else:
+							return JsonResponse({'result': 3}) # Not a group member
 					except Exception as ex:
-						return JsonResponse({'result': 3})
+						return JsonResponse({'result': 4})
 				else:
 					# Group does not exist
 					return JsonResponse({'result': 1})
 			else:
-				return JsonResponse({'result': 3}) # Error
+				return JsonResponse({'result': 4}) # Error
 		elif 'del' in request.POST:
 			# Unshare
 			group_id = request.POST.get("del", None)
@@ -290,7 +301,7 @@ def group_share(request):
 					groupshare.delete()
 					# Removal complete
 					return JsonResponse({'result': 0})
-				except Exception as ex:					
+				except Exception as ex:
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
@@ -326,7 +337,8 @@ def user_share(request):
 								if not user_shr:
 									return JsonResponse({'result': 1})
 								else:
-									# Email user -----------
+									# Email user
+									send_share_email(user.email, user.name, user.surname, sharer.name, sharer.surname, sharer.user_id, request.POST.get("fn", ""))
 									return JsonResponse({'result': 0}) # Success
 					except Exception as ex:
 						return JsonResponse({'result': 4})

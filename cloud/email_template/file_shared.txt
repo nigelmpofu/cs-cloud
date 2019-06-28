@@ -1,0 +1,9 @@
+Good day {first_name} {last_name}.
+
+{sfirst_name} {slast_name} ({username}) has shared a file with you.
+The shared item can be located under the 'Shared with Me' page from your CS Cloud account.
+
+Item Shared: {share_item}
+
+Kind regards,
+The CS Cloud Team

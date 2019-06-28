@@ -33,8 +33,6 @@ def send_password_request_email(user_token, user_id, email_address, user_name, u
 		email_text = file.read()
 		file.close()
 
-		
-
 		email_text = email_text.replace(fn, user_name)
 		email_text = email_text.replace(ln, user_surname)
 		email_text = email_text.replace(url, request_url)
@@ -58,3 +56,43 @@ def send_password_request_email(user_token, user_id, email_address, user_name, u
 		#raise e
 		return False
 
+
+def send_share_email(email_address, user_name, user_surname, sharer_name, sharer_surname, sharer_id, shared_file):
+	try:
+		fn = "{first_name}"
+		ln = "{last_name}"
+		sfn = "{sfirst_name}"
+		sln = "{slast_name}"
+		sid = "{username}"
+		sfl = "{share_item}"
+
+		file_path = settings.BASE_DIR + '/cloud/email_template/file_shared.txt'
+		email_subject = "File Shared With You"
+
+		file = open(file_path, 'a+')
+		file.seek(0)
+		email_text = file.read()
+		file.close()
+
+		email_text = email_text.replace(fn, user_name)
+		email_text = email_text.replace(ln, user_surname)
+		email_text = email_text.replace(sfn, sharer_name)
+		email_text = email_text.replace(sln, sharer_surname)
+		email_text = email_text.replace(sid, sharer_id)
+		email_text = email_text.replace(sfl, shared_file)
+
+		if settings.DEBUG:
+			# Print email to terminal for debugging purposes
+			print(email_text)
+
+		# Emails are sent here
+		if settings.EMAIL_HOST != "":
+			send_mail(email_subject, email_text, settings.FROM_EMAIL_ADDRESS, [email_address], fail_silently=False)
+		else:
+			logger.warning("No EMAIL_HOST configured; Did not attempt to send email.")
+
+		return True
+	except SMTPException as e:
+		logger.error('Error while sending email: ' + str(e))
+		#raise e
+		return False
