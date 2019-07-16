@@ -49,6 +49,7 @@
 									<th style="display: none;">First Name</th>
 									<th>Surname</th>
 									<th>Email</th>
+									<th>Can Edit</th>
 									<th>Unshare</th>
 								</tr>
 							</thead>
@@ -74,6 +75,7 @@
 							<thead>
 								<tr>
 									<th>Group Name</th>
+									<th>Can Edit</th>
 									<th>Unshare</th>
 								</tr>
 							</thead>
@@ -256,9 +258,16 @@
 				dataSrc: ""
 			},
 			"columns": [
-				{ data: "fields.name", "orderable": true, "searchable": true }, // group name
+				{ data: "group__name", "orderable": true, "searchable": true }, // group name
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\', 1);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.fields.name+'?"></i></button>';
+					if(data.can_edit == true) {
+						return '<i class="fa fa-check style="font-size: 16pt;"></i>';
+					} else {
+						return '<i class="fa fa-times style="font-size: 16pt;"></i>';
+					}
+				} }, // Can Edit
+				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.group__pk+'\', 1);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.group__name+'?"></i></button>';
 					}
 				} // delete button
 			],
@@ -276,14 +285,21 @@
 				dataSrc: ""
 			},
 			"columns": [
-				{ data: "pk", "orderable": true, "searchable": true }, // user_id
-				{ data: "fields.title", "orderable": false, "searchable": false }, // title
-				{ data: "fields.initials", "orderable": false, "searchable": true }, // initials
-				{ data: "fields.name", "orderable": false, "searchable": true, visible: false }, // first name (hidden)
-				{ data: "fields.surname", "orderable": true, "searchable": true }, // surname
-				{ data: "fields.email", "orderable": false, "searchable": true }, // email
+				{ data: "shared_with__pk", "orderable": true, "searchable": true }, // user_id
+				{ data: "shared_with__title", "orderable": false, "searchable": false }, // title
+				{ data: "shared_with__initials", "orderable": false, "searchable": true }, // initials
+				{ data: "shared_with__name", "orderable": false, "searchable": true, visible: false }, // first name (hidden)
+				{ data: "shared_with__surname", "orderable": true, "searchable": true }, // surname
+				{ data: "shared_with__email", "orderable": false, "searchable": true }, // email
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.pk+'\', 0);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.pk+'?"></i></button>';
+					if(data.can_edit == true) {
+						return '<i class="fa fa-check style="font-size: 16pt;"></i>';
+					} else {
+						return '<i class="fa fa-times style="font-size: 16pt;"></i>';
+					}
+				} }, // Can Edit
+				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
+					return '<button type="button" class="btn btn-danger btn-xs rounded-circle" onclick="unshare(\''+data.shared_with__pk+'\', 0);"><i class="fa fa-user-times" style="color: white; font-size: 16pt;" data-toggle="tooltip" title="Unshare with '+data.shared_with__pk+'?"></i></button>';
 					}
 				} // delete button
 			],

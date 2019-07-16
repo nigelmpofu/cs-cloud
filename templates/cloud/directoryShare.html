@@ -1,0 +1,152 @@
+{% extends "cloud/base.html" %}
+{% load staticfiles %}
+{% block extrahead %}
+	<title>Files - CS Cloud</title>
+	<style>
+		.cscbrowser {
+			position: absolute;
+			left: 16px;
+			right: 16px;
+		}
+		#waitOverlay {
+			position: fixed;
+			top: 0;
+			z-index: 100;
+			width: 100%;
+			height:100%;
+			display: none;
+			background: rgba(0,0,0,0.6);
+		}
+		.wait-spinner {
+			height: 100%;
+			display: flex;
+			justify-content: center;
+			align-items: center;  
+		}
+		.spinner {
+			width: 40px;
+			height: 40px;
+			border: 4px #ddd solid;
+			border-top: 4px #2e93e6 solid;
+			border-radius: 50%;
+			animation: sp-anime 0.8s infinite linear;
+		}
+		@keyframes sp-anime {
+			0% { 
+				transform: rotate(0deg);
+			}
+			100% { 
+				transform: rotate(359deg);
+			}
+		}
+		.is-hide{
+			display:none;
+		}
+		.dropdown-menu {
+			border-radius: 16px;
+			display: none;
+			position: absolute;
+			background-color: #f9f9f9;
+			min-width: 160px;
+			box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+			z-index: 1;
+		}
+		.dropdown-menu a {
+			color: black;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+		}
+	</style>
+{% endblock extrahead %}
+{% block context %}
+<div class="cscbrowser">
+	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
+		<div class="card-header" style="border-radius: 16px;"><h4>Shared Directory<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span></h4>
+		</div>
+		<ul class="breadcrumb">
+			{% for breadcrumb in breadcrumbs %}
+			<li style="color: #696969; cursor: default;">
+				{% if forloop.last %}
+				{% if breadcrumb.label == "fm-home" %}
+				<i class="fa fa-home" style="font-size:24px; color: #696969;" data-toggle="tooltip" title="Current Directory">&nbsp</i>
+				{% else %}
+				<label data-toggle="tooltip" title="Current Directory">&nbsp{{ breadcrumb.label }}</label>
+				{% endif %}
+				{% else %}
+				<a href="{% url 'fileExplorer' %}?p={{breadcrumb.path}}" style="color: #696969;"> <!-- Dark grey -->
+					{% if breadcrumb.label == "fm-home" %}
+					<i class="fa fa-home" style="font-size:24px; color: #696969; cursor: pointer;" data-toggle="tooltip" title="Home Directory">&nbsp<i class="fa fa-angle-right"></i></i>
+					{% else %}
+					&nbsp{{ breadcrumb.label }}&nbsp<i class="fa fa-angle-right" style=" color: grey;"></i>
+					{% endif %}
+				</a>
+				{% endif %}
+			</li>
+			{% endfor %}
+		</ul>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Type</th>
+					<th>Name</th>
+					<th>Size</th>
+					<th>Modified Date</th>
+					<th>Download</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for file in files %}
+				<tr>
+					<td>{{file.filetype}}</td>
+					{% if file.filetype == "directory" %}
+					<td><a href="?p={{file.filepath}}">{{file.filename}}</a></td>
+					{% else %}
+					<td>{{file.filename}}</td>
+					{% endif %}
+					<td>{% if file.filetype == "directory" %}----{%else%}{{file.filesize}}{%endif%}</td>
+					<td>{{file.filedate}}</td>
+					{% if file.filetype == "directory" %}
+					<td><i class="fa fa-minus"></i></td>
+					{% else %}
+					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}&fs={{shareurl}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
+					{% endif %}
+					<td>
+						<div class="dropdown">
+							<button class="btn btn-default" type="button" data-toggle="dropdown">
+								<i class="fa fa-ellipsis-h" style="font-size:24px; color: black; cursor: pointer;" data-toggle="tooltip" title="More"></i>
+							</button>
+							<ul class="dropdown-menu">
+								<li class="dropdown-header">Options</li>								
+								{% if file.filetype != "directory" %}
+								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}"><i class="fa fa-info-circle" style="color: #696969; padding-right: 8px;"></i>&nbsp;Details</a></li>
+								{% endif %}
+							</ul>
+						</div>
+					</td>
+				</tr>
+				{% empty %}
+				<tr>
+					<td colspan="5">Nothing to see here.<br/>No Files</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% include "cloud/alertModal.html" %}
+{% include "cloud/fileDetailsModal.html" %}
+{% include "cloud/uploadModal.html" %}
+{% include "cloud/mkdirModal.html" %}
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('[data-toggle="tooltip"]').tooltip();
+	});
+	window.alert = function(message) {
+		// Alert window override
+		$("#alertModal").modal('show');
+		$("#alertMsg").html(message);
+	};
+</script>
+{% endblock %}

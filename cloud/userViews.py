@@ -1,15 +1,17 @@
 import os
 import uuid
+import json
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
 from django.core import serializers
+from django.core.serializers.json import DjangoJSONEncoder
 from cloud.decorators.userRequired import user_required
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.crypto import get_random_string
 from .tokens import tokenizer
-from .forms import GroupForm, LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, UserShareForm
+from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, GroupShareForm, UserShareForm
 from .mailer import send_password_request_email, send_share_email
 from .models import Group, GroupShare, PublicShare, User, UserGroup, UserShare
 from .fileManager import FileManager
@@ -42,7 +44,7 @@ def file_explorer(request):
 	rename_form = RenameForm()
 	upload_form = UploadForm()
 	usershare_from = UserShareForm()
-	groupshare_form = GroupForm()
+	groupshare_form = GroupShareForm()
 	if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 		new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 		fm.update_path(new_path)
@@ -192,12 +194,35 @@ def file_rename(request):
 
 
 def file_download(request):
-	fm = FileManager(request.user)
-	return fm.download_file(request.GET.get("file"))
+	file_share = request.GET.get("fs", None)
+	if file_share == None:
+		fm = FileManager(request.user)
+		return fm.download_file(request.GET.get("file"))
+	else:
+		if not PublicShare.objects.filter(url=file_share).exists():
+			return render(request, 'cloud/e404.html') # 404
+		else:
+			share_data = get_object_or_404(PublicShare, url=file_share)
+			fm = FileManager(share_data.owner)
+			is_file = fm.set_share_path(share_data.path)
+			if is_file == 1:
+				# Download file
+				return fm.download_file(share_data.path)
+			else:
+				# Download file from shared directory
+				return fm.download_file(request.GET.get("file"))
 
 
 def check_quota(request):
-	return JsonResponse({'available': request.user.get_remaining_quota()})
+	file_share = request.POST.get("fs")
+	if file_share == "":
+		return JsonResponse({'available': request.user.get_remaining_quota()})
+	else:
+		if not PublicShare.objects.filter(url=file_share).exists():
+			return JsonResponse({'available': -1}) # 404
+		else:
+			share_data = get_object_or_404(PublicShare, url=file_share)
+			return JsonResponse({'available': share_data.owner.get_remaining_quota()})
 
 
 def file_upload(request):
@@ -206,12 +231,22 @@ def file_upload(request):
 		upload_form.full_clean()
 		user_files = request.FILES.getlist('user_files')
 		if upload_form.is_valid():
-			fm = FileManager(request.user)
+			file_share = upload_form.cleaned_data['share_url']			
+			user_rec = None
+			if file_share == "":
+				user_rec = request.user
+			else:
+				if not PublicShare.objects.filter(url=file_share).exists():
+					return JsonResponse({'result': 1})
+				else:
+					share_data = get_object_or_404(PublicShare, url=file_share)
+					user_rec = share_data.owner
+			fm = FileManager(user_rec)
 			fm.update_path(upload_form.cleaned_data['upload_path'])
-			user_db = get_object_or_404(User, pk=request.user.user_id)
+			user_db = get_object_or_404(User, pk=user_rec.user_id)
 			insufficient_count = 0
 			for file_to_upload in user_files:
-				user_db = get_object_or_404(User, pk=request.user.user_id)
+				user_db = get_object_or_404(User, pk=user_rec.user_id)
 				if file_to_upload.size <= user_db.get_remaining_quota():
 					fm.upload_file(file_to_upload)
 				else:
@@ -250,11 +285,12 @@ def group_share(request):
 	if request.method == 'POST':
 		if 'lst' not in request.POST and 'del' not in request.POST:
 			# Share
-			group_form = GroupForm(request.POST)
+			group_form = GroupShareForm(request.POST)
 			group_form.full_clean()
 			if group_form.is_valid():
 				# Form valid
 				group_name = group_form.cleaned_data['groupname']
+				can_edit_check = group_form.cleaned_data['can_edit']
 				# Check if group available
 				if Group.objects.filter(name=group_name).exists():
 					# Share to group
@@ -266,7 +302,7 @@ def group_share(request):
 							if GroupShare.objects.filter(owner=user, group=grup, path=request.POST.get("fp", "")).exists():
 								return JsonResponse({'result': 2})
 							else:
-								group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""))
+								group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""), can_edit=can_edit_check)
 								if not group_shr:
 									return JsonResponse({'result': 1})
 								else:
@@ -274,8 +310,7 @@ def group_share(request):
 									grup_members = UserGroup.objects.filter(group=grup)
 									for member in grup_members:
 										if member.user != user:
-											# Do not email myself
-											print(member.user)
+											# Do not email myself											
 											send_share_email(member.user.email, member.user.name, member.user.surname, user.name, user.surname,
 												user.user_id, request.POST.get("fn", ""))
 									return JsonResponse({'result': 0}) # Success
@@ -305,8 +340,9 @@ def group_share(request):
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			group_share_list = GroupShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("group")
-			json_data = serializers.serialize('json', Group.objects.filter(pk__in=group_share_list), fields=('name'))
+			group_share_list = GroupShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("group__pk","group__name","can_edit")
+			#json_data = serializers.serialize('json', group_share_list, fields=('name', 'edit'))
+			json_data = json.dumps(list(group_share_list), cls=DjangoJSONEncoder)
 			return HttpResponse(json_data, content_type='application/json')
 	else:
 		return HttpResponseForbidden()
@@ -321,6 +357,7 @@ def user_share(request):
 			if user_form.is_valid():
 				# Form valid
 				user_name = user_form.cleaned_data['username']
+				can_edit_check = user_form.cleaned_data['can_edit']
 				# Check if group available
 				if User.objects.filter(user_id=user_name).exists():
 					# Share to user
@@ -333,7 +370,7 @@ def user_share(request):
 							if UserShare.objects.filter(owner=sharer, shared_with=user, path=request.POST.get("fp", "")).exists():
 								return JsonResponse({'result': 2})
 							else:
-								user_shr = UserShare.objects.create(owner=sharer, shared_with=user, path=request.POST.get("fp", ""))
+								user_shr = UserShare.objects.create(owner=sharer, shared_with=user, path=request.POST.get("fp", ""), can_edit=can_edit_check)
 								if not user_shr:
 									return JsonResponse({'result': 1})
 								else:
@@ -364,8 +401,10 @@ def user_share(request):
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			user_share_list = UserShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("shared_with")
-			json_data = serializers.serialize('json', User.objects.filter(user_id__in=user_share_list), fields=('title','initials','name','surname','email'))
+			user_share_list = UserShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("shared_with__pk","shared_with__title",
+				"shared_with__initials","shared_with__name","shared_with__surname","shared_with__email","can_edit")
+			#json_data = serializers.serialize('json', User.objects.filter(user_id__in=user_share_list), fields=('title','initials','name','surname','email'))
+			json_data = json.dumps(list(user_share_list), cls=DjangoJSONEncoder)			
 			return HttpResponse(json_data, content_type='application/json')
 	else:
 		return HttpResponseForbidden()
@@ -410,4 +449,26 @@ def public_access(request, share_url):
 	if not PublicShare.objects.filter(url=share_url).exists():
 		return render(request, 'cloud/e404.html') # 404
 	else:
-		return HttpResponse()
+		share_data = get_object_or_404(PublicShare, url=share_url)
+		fm = FileManager(share_data.owner)
+		is_file = fm.set_share_path(share_data.path)
+		if is_file == 1:
+			# File details
+			context = fm.file_details(share_data.path)
+			context.update({'fileowner': share_data.owner, 'shareurl': share_url})
+			return render(request, 'cloud/fileShare.html', context)
+		else:
+			# Directory Explorer
+			mkdir_form = MkdirForm()
+			rename_form = RenameForm()
+			upload_form = UploadForm()
+			if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
+				new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
+				fm.update_path(new_path)
+				mkdir_form.initial['dir_path'] = new_path
+				upload_form.initial['upload_path'] = new_path
+			upload_form.initial['share_url'] = share_url
+			context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form, 'renameForm': rename_form,
+					'shareurl': share_url}
+			fm.update_context_data(context)
+			return render(request, 'cloud/directoryShare.html', context)

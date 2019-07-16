@@ -62,6 +62,18 @@ class FileManager(object):
 		self.update_path(None)
 
 
+	def set_share_path(self, path):
+		self.user_directory = settings.MEDIA_ROOT + "/" + self.current_user.user_id
+		self.user_trash = settings.TRASH_ROOT  + "/" + self.current_user.user_id
+		self.user_storage = FileSystemStorage(location=self.user_directory)
+		self.trash_storage = FileSystemStorage(location=self.user_trash)		
+		if os.path.isfile(self.user_storage.path(path)):
+			return 1 # File
+		else:
+			self.update_path(path)
+			return 0 # Directory
+
+
 	def update_path(self, path):
 		if path is None or len(path) == 0:
 			self.path = ''

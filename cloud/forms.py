@@ -99,10 +99,11 @@ class UserForm(forms.ModelForm):
 class UploadForm(forms.ModelForm):
 	class Meta:
 		model = UserData
-		fields = ['user_files', 'upload_path']
+		fields = ['user_files', 'upload_path', 'share_url']
 
 	user_files = forms.FileField(label='Select files to upload:', widget=forms.ClearableFileInput(attrs={'multiple': True}))
 	upload_path = forms.CharField(widget=forms.HiddenInput(), required=False)
+	share_url = forms.CharField(widget=forms.HiddenInput(), required=False)
 
 
 class MkdirForm(forms.Form):
@@ -137,9 +138,23 @@ class GroupMemberForm(forms.Form):
 	gid = forms.CharField(widget=forms.HiddenInput(attrs={'id': 'gid'}), required=False)
 
 
+class GroupShareForm(forms.Form):
+	groupname = forms.CharField(
+		label="Group Name",
+		max_length=32,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'groupname', 'placeholder': 'Group Name', 'autocomplete': 'off',
+								'onchange': 'checkGroup()', 'oninput': 'resetGroup()'}))
+	can_edit = forms.CharField(
+		label="Can Edit?",		
+		widget=forms.CheckboxInput(attrs={'class': 'form-control'}), required=False)
+
+
 class UserShareForm(forms.Form):
 	username = forms.CharField(
 		label="Username",
 		max_length=32,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'username', 'placeholder': 'Username', 'autocomplete': 'off',
 								'onchange': 'checkUser()', 'oninput': 'resetUser()'}))
+	can_edit = forms.CharField(
+		label="Can Edit?",		
+		widget=forms.CheckboxInput(attrs={'class': 'form-control'}), required=False)
