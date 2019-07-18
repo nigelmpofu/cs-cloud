@@ -482,7 +482,7 @@ def public_access(request, share_url):
 			return render(request, 'cloud/fileShare.html', context)
 		else:
 			# Directory Explorer
-			mkdir_form = MkdirForm()			
+			mkdir_form = MkdirForm()
 			upload_form = UploadForm()
 			mkdir_form.initial['dir_path'] = share_data.path # Default path
 			upload_form.initial['upload_path'] = share_data.path # Set defaiult path
@@ -497,3 +497,9 @@ def public_access(request, share_url):
 					'shareurl': share_url, 'canEdit': share_data.can_edit, 'sharelink': settings.EXTERNAL_URL + 's/' + share_url}
 			fm.update_context_data(context)
 			return render(request, 'cloud/directoryShare.html', context)
+
+
+@user_required
+def shared_with_me(request):
+	context = {}
+	return render(request, 'cloud/sharedBrowser.html', context)

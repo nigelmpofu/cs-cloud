@@ -67,5 +67,6 @@ urlpatterns = [
 	path('file/pshare/', userViews.public_share, name="publicShare"),
 
 	# Public Link
-	path('s/<str:share_url>/', userViews.public_access, name="publicAccess")
+	path('s/<str:share_url>/', userViews.public_access, name="publicAccess"),
+	path('swm/', userViews.shared_with_me, name="sharedWithMe")
 ]
