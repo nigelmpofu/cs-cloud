@@ -1,10 +1,12 @@
 import os
 import re
+import json
 import shutil
 from smtplib import SMTPException
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Count
 from cloud.decorators.adminRequired import admin_required
 from django.shortcuts import get_object_or_404, render
@@ -159,6 +161,51 @@ def list_members(request):
 		return render(request, 'cloud/groupMemberFrame.html', context)
 	else:
 		return redirect("fileExplorer")
+
+@admin_required
+def disk_data(request):
+	if request.user.is_staff and request.method == 'POST':
+		# Sort by used space
+		user_disk_info = list(User.objects.extra(select={'name': 'user_id', 'y': 'used_quota'}).values("name", "y").order_by("y"))
+		total_used = 0
+		for amount in User.objects.values("used_quota"):
+			total_used += int(amount["used_quota"])
+		user_disk_info.append({'name': "* USED SPACE", 'y': total_used}) # Get free disk space
+		user_disk_info.append({'name': "* FREE SPACE", 'y': shutil.disk_usage(settings.MEDIA_ROOT)[2]}) # Get free disk space
+		# Highcharts JSON Format - :.2f
+		'''
+		disk_info = {
+			'chart': {'type': 'pie'},
+			'title': {'text': 'Disk Usage Information'},
+			'subtitle': {'text': 'Disk storage space used by each user'},
+			'tooltip': {
+				'headerFormat': '<span style="font-size:12px">{series.name}</span><br>',
+				'pointFormat': '{point.name}: <b>{point.y} bytes</b><br/>'
+				#'pointFormatter': 'function () {return bytesFormat({point.y});}'
+			},
+			'plotOptions': {
+				'pie': {
+					'allowPointSelect': 'true',
+					'dataLabels': {
+						'enabled': 'true',
+						'format': '<b>{point.name}</b>: {point.percentage:.1f}%'
+					}
+				}
+			},
+			'series': [{
+				'name': 'Used',
+				'colorByPoint': 'true',
+				'data': user_disk_info
+			}]
+		}
+		return JsonResponse(disk_info)
+		'''
+
+		json_data = json.dumps(user_disk_info, cls=DjangoJSONEncoder)
+		return HttpResponse(json_data, content_type='application/json')
+	else:
+		# Not an admin
+		return HttpResponseForbidden("Access Denied")
 
 
 @admin_required

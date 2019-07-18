@@ -31,6 +31,7 @@ urlpatterns = [
 	
 	# Admin URL
 	path('admin/diskUsage/', adminViews.disk_usage, name="diskUsage"),
+	path('admin/diskUsage/data/', adminViews.disk_data, name="diskData"),
 	path('admin/groupAdmin/', adminViews.group_admin, name="groupAdmin"),
 	path('admin/groupAdmin/addMember/', adminViews.add_group_member, name="addGroupMember"),
 	path('admin/groupAdmin/removeMember/', adminViews.remove_group_member, name="removeGroupMember"),
@@ -65,6 +66,6 @@ urlpatterns = [
 	path('file/ushare/', userViews.user_share, name="userShare"),
 	path('file/pshare/', userViews.public_share, name="publicShare"),
 
-	# Publib Link
+	# Public Link
 	path('s/<str:share_url>/', userViews.public_access, name="publicAccess")
 ]
