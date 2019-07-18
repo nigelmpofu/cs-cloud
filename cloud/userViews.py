@@ -13,7 +13,7 @@ from django.utils.crypto import get_random_string
 from .tokens import tokenizer
 from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, GroupShareForm, UserShareForm
 from .mailer import send_password_request_email, send_share_email
-from .models import Group, GroupShare, PublicShare, User, UserGroup, UserShare
+from .models import Group, GroupShare, ShareUrl, User, UserGroup, UserShare
 from .fileManager import FileManager
 
 @user_required
@@ -166,10 +166,10 @@ def file_details(request):
 		if file_share == "":
 			user_rec = request.user
 		else:
-			if not PublicShare.objects.filter(url=file_share).exists():
+			if not ShareUrl.objects.filter(url=file_share).exists():
 				return HttpResponseNotFound("Missing file")
 			else:
-				share_data = get_object_or_404(PublicShare, url=file_share)
+				share_data = get_object_or_404(ShareUrl, url=file_share)
 				user_rec = share_data.owner
 		fm = FileManager(user_rec)
 		file_information = {}
@@ -209,10 +209,10 @@ def file_download(request):
 		fm = FileManager(request.user)
 		return fm.download_file(request.GET.get("file"))
 	else:
-		if not PublicShare.objects.filter(url=file_share).exists():
+		if not ShareUrl.objects.filter(url=file_share).exists():
 			return render(request, 'cloud/e404.html') # 404
 		else:
-			share_data = get_object_or_404(PublicShare, url=file_share)
+			share_data = get_object_or_404(ShareUrl, url=file_share)
 			fm = FileManager(share_data.owner)
 			is_file = fm.set_share_path(share_data.path)
 			if is_file == 1:
@@ -228,10 +228,10 @@ def check_quota(request):
 	if file_share == "":
 		return JsonResponse({'available': request.user.get_remaining_quota()})
 	else:
-		if not PublicShare.objects.filter(url=file_share).exists():
+		if not ShareUrl.objects.filter(url=file_share).exists():
 			return JsonResponse({'available': -1}) # 404
 		else:
-			share_data = get_object_or_404(PublicShare, url=file_share)
+			share_data = get_object_or_404(ShareUrl, url=file_share)
 			return JsonResponse({'available': share_data.owner.get_remaining_quota()})
 
 
@@ -246,10 +246,10 @@ def file_upload(request):
 			if file_share == "":
 				user_rec = request.user
 			else:
-				if not PublicShare.objects.filter(url=file_share).exists():
+				if not ShareUrl.objects.filter(url=file_share).exists():
 					return JsonResponse({'result': 1})
 				else:
-					share_data = get_object_or_404(PublicShare, url=file_share)
+					share_data = get_object_or_404(ShareUrl, url=file_share)
 					user_rec = share_data.owner
 			fm = FileManager(user_rec)
 			fm.update_path(upload_form.cleaned_data['upload_path'])
@@ -282,10 +282,10 @@ def create_directory(request):
 			if file_share == "":
 				user_rec = request.user
 			else:
-				if not PublicShare.objects.filter(url=file_share).exists():
+				if not ShareUrl.objects.filter(url=file_share).exists():
 					return JsonResponse({'result': 1})
 				else:
-					share_data = get_object_or_404(PublicShare, url=file_share)
+					share_data = get_object_or_404(ShareUrl, url=file_share)
 					user_rec = share_data.owner
 			fm = FileManager(user_rec)
 			fm.update_path(mkdir_form.cleaned_data['dir_path'])
@@ -433,34 +433,40 @@ def user_share(request):
 def public_share(request):
 	if request.method == 'POST':
 		if 'lst' not in request.POST:
-			if PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
+			if ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
 				# Delete link
 				try:
-					share_url = PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", ""))
-					share_url.delete()
-				except Exception:
+					share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values("url_id")
+					share_url_link = ShareUrl.objects.filter(url__in=share_url)
+					share_url_link.delete()		
+					#share_url.delete()
+				except Exception as ex:
 					return JsonResponse({'result': 2})
 				return JsonResponse({'result': 1})
 			else:
 				# Share
 				#new_url = str(uuid.uuid4().hex[:16]) # Generate unique link
 				new_url = str(get_random_string(length=12)) # Random share link
-				while PublicShare.objects.filter(url=new_url).exists():
+				while ShareUrl.objects.filter(url=new_url).exists():
 					# Check if random url has not been used before
 					new_url = str(get_random_string(length=12)) # Regenerate random share link
 				try:
 					user = get_object_or_404(User, user_id=request.user.pk)
-					new_share = PublicShare.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url, can_edit=False)
-					if new_share:
-						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
+					new_share_url = ShareUrl.objects.create(url=new_url, is_private=False)
+					if new_share_url:
+						new_share = ShareUrl.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_share_url, can_edit=False)
+						if new_share:
+							return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
+						else:
+							return JsonResponse({'result': 2})
 					else:
 						return JsonResponse({'result': 2})
 				except Exception as ex:
 					return JsonResponse({'result': 2})
 		else:
 			# Return share list
-			if PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
-				share_url = PublicShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", flat=True)[0]
+			if ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
+				share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url_id", flat=True)[0]
 				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url)})
 			else:
 				return JsonResponse({'result': 1})
@@ -469,10 +475,10 @@ def public_share(request):
 
 
 def public_access(request, share_url):
-	if not PublicShare.objects.filter(url=share_url).exists():
+	if not ShareUrl.objects.filter(url=share_url).exists():
 		return render(request, 'cloud/e404.html') # 404
 	else:
-		share_data = get_object_or_404(PublicShare, url=share_url)
+		share_data = get_object_or_404(ShareUrl, url=share_url)
 		fm = FileManager(share_data.owner)
 		is_file = fm.set_share_path(share_data.path)
 		if is_file == 1:

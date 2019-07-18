@@ -101,27 +101,17 @@ class UserGroup(models.Model):
 
 class ShareUrl(models.Model):
 	url = models.CharField(max_length=32, primary_key=True)
-	is_private = models.BooleanField(default=False, null=False)
-
-
-class PublicShare(models.Model):
-	url = models.ForeignKey(ShareUrl, related_name="purl", on_delete=models.CASCADE, null=False)
-	owner = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
-	path = models.CharField(max_length=256, default="", null=False)
 	can_edit = models.BooleanField(default=False, null=False)
+	is_private = models.BooleanField(default=False, null=False)
+	owner = models.ForeignKey(User, related_name="owner", on_delete=models.CASCADE, null=False)
+	path = models.CharField(max_length=256, default="", null=False)
 
 
 class UserShare(models.Model):
 	url = models.ForeignKey(ShareUrl, related_name="uurl", on_delete=models.CASCADE, null=False)
-	owner = models.ForeignKey(User, related_name="owner", on_delete=models.CASCADE, null=False)
 	shared_with = models.ForeignKey(User, related_name="recepient", on_delete=models.CASCADE, null=False)
-	path = models.CharField(max_length=256, default="", null=False)
-	can_edit = models.BooleanField(default=False, null=False)
 
 
 class GroupShare(models.Model):
 	url = models.ForeignKey(ShareUrl, related_name="gurl", on_delete=models.CASCADE, null=False)
-	owner = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 	group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False)
-	path = models.CharField(max_length=256, default="", null=False)
-	can_edit = models.BooleanField(default=False, null=False)
