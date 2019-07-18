@@ -112,6 +112,7 @@ class MkdirForm(forms.Form):
 		max_length = 32,
 		widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'dir_name', 'placeholder': 'Directory Name', 'autocomplete': 'off'}))
 	dir_path = forms.CharField(widget=forms.HiddenInput(), required=False)
+	share_url = forms.CharField(widget=forms.HiddenInput(), required=False)
 
 
 class RenameForm(forms.Form):

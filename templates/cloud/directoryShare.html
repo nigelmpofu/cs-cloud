@@ -62,7 +62,7 @@
 {% block context %}
 <div class="cscbrowser">
 	<div class="card my-5 shadow p-4 mb-4 bg-white" style="overflow: auto;">
-		<div class="card-header" style="border-radius: 16px;"><h4>Shared Directory<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span></h4>
+		<div class="card-header" style="border-radius: 16px;"><h4>Shared Directory{%if canEdit%}<span data-toggle="modal" data-target="#mkdirModal"><i class="fa fa-folder fa-2x pull-right" data-toggle="tooltip" title="Create Folder"></i></span><span data-toggle="modal" data-target="#uploadModal"><i class="fa fa-plus fa-2x pull-right" title="Upload File" data-toggle="tooltip"></i></span>{%endif%}</h4>
 		</div>
 		<ul class="breadcrumb">
 			{% for breadcrumb in breadcrumbs %}
@@ -74,7 +74,7 @@
 				<label data-toggle="tooltip" title="Current Directory">&nbsp{{ breadcrumb.label }}</label>
 				{% endif %}
 				{% else %}
-				<a href="{% url 'fileExplorer' %}?p={{breadcrumb.path}}" style="color: #696969;"> <!-- Dark grey -->
+				<a href="{{sharelink}}?p={{breadcrumb.path}}" style="color: #696969;"> <!-- Dark grey -->
 					{% if breadcrumb.label == "fm-home" %}
 					<i class="fa fa-home" style="font-size:24px; color: #696969; cursor: pointer;" data-toggle="tooltip" title="Home Directory">&nbsp<i class="fa fa-angle-right"></i></i>
 					{% else %}
@@ -113,17 +113,19 @@
 					<td><a href="{% url 'fileDownload' %}?file={{file.filepath}}&fs={{shareurl}}" target="_blank"><i class="fa fa-download" style="font-size:24px" data-toggle="tooltip" title="Download {{file.filename}}"></i></a></td>
 					{% endif %}
 					<td>
+						{% if file.filetype != "directory" %}
 						<div class="dropdown">
 							<button class="btn btn-default" type="button" data-toggle="dropdown">
 								<i class="fa fa-ellipsis-h" style="font-size:24px; color: black; cursor: pointer;" data-toggle="tooltip" title="More"></i>
-							</button>
+							</button>							
 							<ul class="dropdown-menu">
-								<li class="dropdown-header">Options</li>								
-								{% if file.filetype != "directory" %}
+								<li class="dropdown-header">Options</li>
 								<li><a style="cursor: pointer;" data-toggle="modal" data-target="#fileDetailsModal" data-fp="{{file.filepath}}"><i class="fa fa-info-circle" style="color: #696969; padding-right: 8px;"></i>&nbsp;Details</a></li>
-								{% endif %}
 							</ul>
 						</div>
+						{% else %}
+						<i class="fa fa-minus" style="color: grey;"></i>
+						{% endif %}
 					</td>
 				</tr>
 				{% empty %}

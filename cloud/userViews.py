@@ -161,7 +161,17 @@ def empty_trash(request):
 
 def file_details(request):
 	if request.method == 'POST':
-		fm = FileManager(request.user)
+		user_rec = None
+		file_share = request.POST.get("fs")
+		if file_share == "":
+			user_rec = request.user
+		else:
+			if not PublicShare.objects.filter(url=file_share).exists():
+				return HttpResponseNotFound("Missing file")
+			else:
+				share_data = get_object_or_404(PublicShare, url=file_share)
+				user_rec = share_data.owner
+		fm = FileManager(user_rec)
 		file_information = {}
 		file_path = request.POST.get("filepath", None)
 		if file_path == None:
@@ -267,7 +277,17 @@ def create_directory(request):
 		mkdir_form = MkdirForm(request.POST)
 		mkdir_form.full_clean()
 		if mkdir_form.is_valid():
-			fm = FileManager(request.user)
+			file_share = mkdir_form.cleaned_data['share_url']			
+			user_rec = None
+			if file_share == "":
+				user_rec = request.user
+			else:
+				if not PublicShare.objects.filter(url=file_share).exists():
+					return JsonResponse({'result': 1})
+				else:
+					share_data = get_object_or_404(PublicShare, url=file_share)
+					user_rec = share_data.owner
+			fm = FileManager(user_rec)
 			fm.update_path(mkdir_form.cleaned_data['dir_path'])
 			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
 			if mkdir_status:
@@ -425,9 +445,12 @@ def public_share(request):
 				# Share
 				#new_url = str(uuid.uuid4().hex[:16]) # Generate unique link
 				new_url = str(get_random_string(length=12)) # Random share link
+				while PublicShare.objects.filter(url=new_url).exists():
+					# Check if random url has not been used before
+					new_url = str(get_random_string(length=12)) # Regenerate random share link
 				try:
 					user = get_object_or_404(User, user_id=request.user.pk)
-					new_share = PublicShare.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url)
+					new_share = PublicShare.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url, can_edit=False)
 					if new_share:
 						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
 					else:
@@ -459,16 +482,18 @@ def public_access(request, share_url):
 			return render(request, 'cloud/fileShare.html', context)
 		else:
 			# Directory Explorer
-			mkdir_form = MkdirForm()
-			rename_form = RenameForm()
+			mkdir_form = MkdirForm()			
 			upload_form = UploadForm()
+			mkdir_form.initial['dir_path'] = share_data.path # Default path
+			upload_form.initial['upload_path'] = share_data.path # Set defaiult path
 			if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
 				new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
 				fm.update_path(new_path)
 				mkdir_form.initial['dir_path'] = new_path
 				upload_form.initial['upload_path'] = new_path
+			mkdir_form.initial['share_url'] = share_url
 			upload_form.initial['share_url'] = share_url
-			context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form, 'renameForm': rename_form,
-					'shareurl': share_url}
+			context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form,
+					'shareurl': share_url, 'canEdit': share_data.can_edit, 'sharelink': settings.EXTERNAL_URL + 's/' + share_url}
 			fm.update_context_data(context)
 			return render(request, 'cloud/directoryShare.html', context)

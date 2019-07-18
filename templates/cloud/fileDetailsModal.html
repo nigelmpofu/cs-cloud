@@ -46,7 +46,7 @@
 			url: "{% url 'fileDetails' %}",
 			type: "POST",
 			async: true,
-			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath},
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath, 'fs': '{{shareurl}}'},
 			dataType: "json",
 			success: function(data) {
 				$("#modalTitle").html("<b>Details:</b> " + data.filename);
