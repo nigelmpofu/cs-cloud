@@ -9,6 +9,7 @@ from django.contrib.auth import authenticate, login as django_login, logout
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Count
 from cloud.decorators.adminRequired import admin_required
+from cloud.decorators.userRequired import user_required
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -162,7 +163,7 @@ def list_members(request):
 	else:
 		return redirect("fileExplorer")
 
-@admin_required
+@user_required
 def disk_data(request):
 	if request.user.is_staff and request.method == 'POST':
 		# Sort by used space
@@ -203,19 +204,27 @@ def disk_data(request):
 
 		json_data = json.dumps(user_disk_info, cls=DjangoJSONEncoder)
 		return HttpResponse(json_data, content_type='application/json')
+	elif not request.user.is_staff and request.method == 'POST':
+		# Normal users
+		user_disk_info = list()
+		for amount in User.objects.filter(pk=request.user.pk).values("disk_quota", "used_quota"):
+			user_disk_info.append({'name': "* USED SPACE", 'y': int(amount["used_quota"])}) # Get used disk space
+			if int(amount["disk_quota"]) == 0:
+				# Unlimited Disk space limited to disk space
+				user_disk_info.append({'name': "* FREE SPACE", 'y': shutil.disk_usage(settings.MEDIA_ROOT)[2]}) # Get free disk space
+			else:
+				user_disk_info.append({'name': "* FREE SPACE", 'y': int(amount["disk_quota"]) - int(amount["used_quota"])}) # Get free disk space
+		json_data = json.dumps(user_disk_info, cls=DjangoJSONEncoder)
+		return HttpResponse(json_data, content_type='application/json')
 	else:
 		# Not an admin
 		return HttpResponseForbidden("Access Denied")
 
 
-@admin_required
+@user_required
 def disk_usage(request):
-	if request.user.is_staff:
-		context = {}
-		return render(request, 'cloud/diskUsage.html', context)
-	else:
-		# Just incase
-		return redirect("fileExplorer")
+	context = {}
+	return render(request, 'cloud/diskUsage.html', context)
 
 
 def create_new_user(request, user_id, user_title, user_initials, user_name, user_surname, user_cell, user_email, user_admin, user_quota):
