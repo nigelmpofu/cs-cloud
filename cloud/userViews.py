@@ -241,7 +241,7 @@ def file_upload(request):
 		upload_form.full_clean()
 		user_files = request.FILES.getlist('user_files')
 		if upload_form.is_valid():
-			file_share = upload_form.cleaned_data['share_url']			
+			file_share = upload_form.cleaned_data['share_url']
 			user_rec = None
 			if file_share == "":
 				user_rec = request.user
@@ -277,7 +277,7 @@ def create_directory(request):
 		mkdir_form = MkdirForm(request.POST)
 		mkdir_form.full_clean()
 		if mkdir_form.is_valid():
-			file_share = mkdir_form.cleaned_data['share_url']			
+			file_share = mkdir_form.cleaned_data['share_url']
 			user_rec = None
 			if file_share == "":
 				user_rec = request.user
@@ -319,21 +319,30 @@ def group_share(request):
 						grup = get_object_or_404(Group, name=group_name)
 						# Check if user is a group member
 						if UserGroup.objects.filter(group=grup, user=user).exists():
-							if GroupShare.objects.filter(owner=user, group=grup, path=request.POST.get("fp", "")).exists():
+							if GroupShare.objects.filter(url__owner=user, group=grup, url__path=request.POST.get("fp", "")).exists():
 								return JsonResponse({'result': 2})
 							else:
-								group_shr = GroupShare.objects.create(owner=user, group=grup, path=request.POST.get("fp", ""), can_edit=can_edit_check)
-								if not group_shr:
-									return JsonResponse({'result': 1})
+								# Create link
+								new_url = str(get_random_string(length=12)) # Random share link
+								while ShareUrl.objects.filter(url=new_url).exists():
+									# Check if random url has not been used before
+									new_url = str(get_random_string(length=12)) # Regenerate random share link
+								group_pub_link = ShareUrl.objects.create(owner=user, path=request.POST.get("fp", ""), url=new_url, can_edit=can_edit_check, is_private=True)
+								if group_pub_link:
+									group_shr = GroupShare.objects.create(url=group_pub_link, group=grup)
+									if not group_shr:
+										return JsonResponse({'result': 1})
+									else:
+										# Email group members
+										grup_members = UserGroup.objects.filter(group=grup)
+										for member in grup_members:
+											if member.user != user:
+												# Do not email myself
+												send_share_email(member.user.email, member.user.name, member.user.surname, user.name, user.surname,
+													user.user_id, request.POST.get("fn", ""))
+										return JsonResponse({'result': 0}) # Success
 								else:
-									# Email group members
-									grup_members = UserGroup.objects.filter(group=grup)
-									for member in grup_members:
-										if member.user != user:
-											# Do not email myself											
-											send_share_email(member.user.email, member.user.name, member.user.surname, user.name, user.surname,
-												user.user_id, request.POST.get("fn", ""))
-									return JsonResponse({'result': 0}) # Success
+									return JsonResponse({'result': 1})
 						else:
 							return JsonResponse({'result': 3}) # Not a group member
 					except Exception as ex:
@@ -352,15 +361,17 @@ def group_share(request):
 				try:
 					grup = get_object_or_404(Group, pk=group_id)
 					sharer = get_object_or_404(User, user_id=request.user.pk)
-					groupshare = get_object_or_404(GroupShare, owner=sharer, group=grup, path=request.POST.get("fp", ""))
-					groupshare.delete()
+					groupshare = GroupShare.objects.filter(url__owner=sharer, group=grup, url__path=request.POST.get("fp", "")).values("url")
+					share_url = ShareUrl.objects.filter(url__in=groupshare)
+					share_url.delete()
 					# Removal complete
 					return JsonResponse({'result': 0})
 				except Exception as ex:
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			group_share_list = GroupShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("group__pk","group__name","can_edit")
+			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", ""))
+			group_share_list = GroupShare.objects.filter(url__in=owner_urls).values("group__pk","group__name","url__can_edit")
 			#json_data = serializers.serialize('json', group_share_list, fields=('name', 'edit'))
 			json_data = json.dumps(list(group_share_list), cls=DjangoJSONEncoder)
 			return HttpResponse(json_data, content_type='application/json')
@@ -387,16 +398,25 @@ def user_share(request):
 						if sharer == user:
 							return JsonResponse({'result': 3}) # Cannot share with yourself
 						else:
-							if UserShare.objects.filter(owner=sharer, shared_with=user, path=request.POST.get("fp", "")).exists():
+							if UserShare.objects.filter(url__owner=sharer, shared_with=user, url__path=request.POST.get("fp", "")).exists():
 								return JsonResponse({'result': 2})
 							else:
-								user_shr = UserShare.objects.create(owner=sharer, shared_with=user, path=request.POST.get("fp", ""), can_edit=can_edit_check)
-								if not user_shr:
-									return JsonResponse({'result': 1})
+								# Create link
+								new_url = str(get_random_string(length=12)) # Random share link
+								while ShareUrl.objects.filter(url=new_url).exists():
+									# Check if random url has not been used before
+									new_url = str(get_random_string(length=12)) # Regenerate random share link
+								user_pub_link = ShareUrl.objects.create(owner=sharer, path=request.POST.get("fp", ""), url=new_url, can_edit=can_edit_check, is_private=True)
+								if user_pub_link:
+									user_shr = UserShare.objects.create(url=user_pub_link, shared_with=user)
+									if not user_shr:
+										return JsonResponse({'result': 1})
+									else:
+										# Email user
+										send_share_email(user.email, user.name, user.surname, sharer.name, sharer.surname, sharer.user_id, request.POST.get("fn", ""))
+										return JsonResponse({'result': 0}) # Success
 								else:
-									# Email user
-									send_share_email(user.email, user.name, user.surname, sharer.name, sharer.surname, sharer.user_id, request.POST.get("fn", ""))
-									return JsonResponse({'result': 0}) # Success
+									return JsonResponse({'result': 1})
 					except Exception as ex:
 						return JsonResponse({'result': 4})
 				else:
@@ -413,21 +433,24 @@ def user_share(request):
 				try:
 					user = get_object_or_404(User, user_id=users_id)
 					sharer = get_object_or_404(User, user_id=request.user.pk)
-					usershare = get_object_or_404(UserShare, owner=sharer, shared_with=user, path=request.POST.get("fp", ""))
-					usershare.delete()
+					usershare = UserShare.objects.filter(url__owner=sharer, shared_with=user, url__path=request.POST.get("fp", "")).values("url")
+					share_url = ShareUrl.objects.filter(url__in=usershare)
+					share_url.delete()
 					# Removal complete
 					return JsonResponse({'result': 0})
 				except Exception as ex:
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			user_share_list = UserShare.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("shared_with__pk","shared_with__title",
-				"shared_with__initials","shared_with__name","shared_with__surname","shared_with__email","can_edit")
+			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", ""))
+			user_share_list = UserShare.objects.values("shared_with__pk","shared_with__title",
+				"shared_with__initials","shared_with__name","shared_with__surname","shared_with__email","url__can_edit")
 			#json_data = serializers.serialize('json', User.objects.filter(user_id__in=user_share_list), fields=('title','initials','name','surname','email'))
-			json_data = json.dumps(list(user_share_list), cls=DjangoJSONEncoder)			
+			json_data = json.dumps(list(user_share_list), cls=DjangoJSONEncoder)
 			return HttpResponse(json_data, content_type='application/json')
 	else:
 		return HttpResponseForbidden()
+
 
 @user_required
 def public_share(request):
@@ -436,11 +459,9 @@ def public_share(request):
 			if ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
 				# Delete link
 				try:
-					share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values("url_id")
-					share_url_link = ShareUrl.objects.filter(url__in=share_url)
-					share_url_link.delete()		
-					#share_url.delete()
-				except Exception as ex:
+					share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", ""))
+					share_url.delete()
+				except Exception as del_ex:
 					return JsonResponse({'result': 2})
 				return JsonResponse({'result': 1})
 			else:
@@ -452,13 +473,9 @@ def public_share(request):
 					new_url = str(get_random_string(length=12)) # Regenerate random share link
 				try:
 					user = get_object_or_404(User, user_id=request.user.pk)
-					new_share_url = ShareUrl.objects.create(url=new_url, is_private=False)
-					if new_share_url:
-						new_share = ShareUrl.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_share_url, can_edit=False)
-						if new_share:
-							return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
-						else:
-							return JsonResponse({'result': 2})
+					new_share = ShareUrl.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url, can_edit=False, is_private=False)
+					if new_share:
+						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
 					else:
 						return JsonResponse({'result': 2})
 				except Exception as ex:
@@ -466,7 +483,7 @@ def public_share(request):
 		else:
 			# Return share list
 			if ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
-				share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url_id", flat=True)[0]
+				share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", flat=True)[0]
 				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url)})
 			else:
 				return JsonResponse({'result': 1})
@@ -479,30 +496,35 @@ def public_access(request, share_url):
 		return render(request, 'cloud/e404.html') # 404
 	else:
 		share_data = get_object_or_404(ShareUrl, url=share_url)
-		fm = FileManager(share_data.owner)
-		is_file = fm.set_share_path(share_data.path)
-		if is_file == 1:
-			# File details
-			context = fm.file_details(share_data.path)
-			context.update({'fileowner': share_data.owner, 'shareurl': share_url})
-			return render(request, 'cloud/fileShare.html', context)
+		if share_data.is_private:
+			# Not for public access
+			return render(request, 'cloud/e404.html') # 404
 		else:
-			# Directory Explorer
-			mkdir_form = MkdirForm()
-			upload_form = UploadForm()
-			mkdir_form.initial['dir_path'] = share_data.path # Default path
-			upload_form.initial['upload_path'] = share_data.path # Set defaiult path
-			if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
-				new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
-				fm.update_path(new_path)
-				mkdir_form.initial['dir_path'] = new_path
-				upload_form.initial['upload_path'] = new_path
-			mkdir_form.initial['share_url'] = share_url
-			upload_form.initial['share_url'] = share_url
-			context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form,
-					'shareurl': share_url, 'canEdit': share_data.can_edit, 'sharelink': settings.EXTERNAL_URL + 's/' + share_url}
-			fm.update_context_data(context)
-			return render(request, 'cloud/directoryShare.html', context)
+			# Public access
+			fm = FileManager(share_data.owner)
+			is_file = fm.set_share_path(share_data.path)
+			if is_file == 1:
+				# File details
+				context = fm.file_details(share_data.path)
+				context.update({'fileowner': share_data.owner, 'shareurl': share_url})
+				return render(request, 'cloud/fileShare.html', context)
+			else:
+				# Directory Explorer
+				mkdir_form = MkdirForm()
+				upload_form = UploadForm()
+				mkdir_form.initial['dir_path'] = share_data.path # Default path
+				upload_form.initial['upload_path'] = share_data.path # Set defaiult path
+				if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
+					new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
+					fm.update_path(new_path)
+					mkdir_form.initial['dir_path'] = new_path
+					upload_form.initial['upload_path'] = new_path
+				mkdir_form.initial['share_url'] = share_url
+				upload_form.initial['share_url'] = share_url
+				context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form,
+						'shareurl': share_url, 'canEdit': share_data.can_edit, 'sharelink': settings.EXTERNAL_URL + 's/' + share_url}
+				fm.update_context_data(context)
+				return render(request, 'cloud/directoryShare.html', context)
 
 
 @user_required

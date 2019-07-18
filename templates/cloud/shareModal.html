@@ -260,7 +260,7 @@
 			"columns": [
 				{ data: "group__name", "orderable": true, "searchable": true }, // group name
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					if(data.can_edit == true) {
+					if(data.url__can_edit == true) {
 						return '<i class="fa fa-check style="font-size: 16pt;"></i>';
 					} else {
 						return '<i class="fa fa-times style="font-size: 16pt;"></i>';
@@ -292,7 +292,7 @@
 				{ data: "shared_with__surname", "orderable": true, "searchable": true }, // surname
 				{ data: "shared_with__email", "orderable": false, "searchable": true }, // email
 				{ data: null, "orderable": false, "searchable": false, render: function(data, type, row) {
-					if(data.can_edit == true) {
+					if(data.url__can_edit == true) {
 						return '<i class="fa fa-check style="font-size: 16pt;"></i>';
 					} else {
 						return '<i class="fa fa-times style="font-size: 16pt;"></i>';
