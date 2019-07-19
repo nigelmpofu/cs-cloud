@@ -8,55 +8,6 @@
 			left: 16px;
 			right: 16px;
 		}
-		#waitOverlay {
-			position: fixed;
-			top: 0;
-			z-index: 100;
-			width: 100%;
-			height:100%;
-			display: none;
-			background: rgba(0,0,0,0.6);
-		}
-		.wait-spinner {
-			height: 100%;
-			display: flex;
-			justify-content: center;
-			align-items: center;  
-		}
-		.spinner {
-			width: 40px;
-			height: 40px;
-			border: 4px #ddd solid;
-			border-top: 4px #2e93e6 solid;
-			border-radius: 50%;
-			animation: sp-anime 0.8s infinite linear;
-		}
-		@keyframes sp-anime {
-			0% { 
-				transform: rotate(0deg);
-			}
-			100% { 
-				transform: rotate(359deg);
-			}
-		}
-		.is-hide{
-			display:none;
-		}
-		.dropdown-menu {
-			border-radius: 16px;
-			display: none;
-			position: absolute;
-			background-color: #f9f9f9;
-			min-width: 160px;
-			box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-			z-index: 1;
-		}
-		.dropdown-menu a {
-			color: black;
-			padding: 12px 16px;
-			text-decoration: none;
-			display: block;
-		}
 	</style>
 {% endblock extrahead %}
 {% block context %}
@@ -69,14 +20,16 @@
 					<th>Type</th>
 					<th>Name</th>
 					<th>Owner</th>
+					<th style="color: grey;">Sharing</th>
 				</tr>
 			</thead>
 			<tbody>
-				{% for file in files %}
+				{% for file in swm_data %}
 				<tr>
-					<td>{{file.filetype}}</td>
-					<td><i class="fa fa-{% if file.sharetype == 'group' %}group{%else%}user{%endif%}"></i><a href="www">{{file.filename}}</a></td>
+					<td>{{file.filetype}}</td>					
+					<td><a href="{% url 'swmAccess' file.url %}">{{file.filename}}</a></td>
 					<td>{{file.owner}}</td>
+					<td><i class="fa fa-{% if file.isgroup %}group{%else%}user{%endif%}" style="font-size: 16pt; color: grey;" data-toggle="tooltip" title="Shared with {% if file.isgroup %}Group{%else%}User{%endif%}"></i></td>
 				</tr>
 				{% empty %}
 				<tr>

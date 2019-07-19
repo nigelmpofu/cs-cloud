@@ -68,5 +68,6 @@ urlpatterns = [
 
 	# Public Link
 	path('s/<str:share_url>/', userViews.public_access, name="publicAccess"),
-	path('swm/', userViews.shared_with_me, name="sharedWithMe")
+	path('swm/', userViews.shared_with_me, name="sharedWithMe"),
+	path('swma/<str:share_url>/', userViews.private_access, name="swmAccess")
 ]

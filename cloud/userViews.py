@@ -1,6 +1,7 @@
 import os
 import uuid
 import json
+import mimetypes
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as django_login, logout
@@ -370,7 +371,7 @@ def group_share(request):
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", ""))
+			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("url")
 			group_share_list = GroupShare.objects.filter(url__in=owner_urls).values("group__pk","group__name","url__can_edit")
 			#json_data = serializers.serialize('json', group_share_list, fields=('name', 'edit'))
 			json_data = json.dumps(list(group_share_list), cls=DjangoJSONEncoder)
@@ -442,8 +443,8 @@ def user_share(request):
 					return JsonResponse({'result': 1}) # Error
 		else:
 			# Return share list
-			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", ""))
-			user_share_list = UserShare.objects.values("shared_with__pk","shared_with__title",
+			owner_urls = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("fp", "")).values("url")
+			user_share_list = UserShare.objects.filter(url__in=owner_urls).values("shared_with__pk","shared_with__title",
 				"shared_with__initials","shared_with__name","shared_with__surname","shared_with__email","url__can_edit")
 			#json_data = serializers.serialize('json', User.objects.filter(user_id__in=user_share_list), fields=('title','initials','name','surname','email'))
 			json_data = json.dumps(list(user_share_list), cls=DjangoJSONEncoder)
@@ -529,5 +530,53 @@ def public_access(request, share_url):
 
 @user_required
 def shared_with_me(request):
-	context = {}
+	# User Share
+	shared_items = UserShare.objects.filter(shared_with=request.user).values("url")
+	# Group share
+	user_groups = UserGroup.objects.filter(user=request.user).values("group")
+	group_items = GroupShare.objects.filter(group__in=user_groups).values("url")
+
+	# Combined urls
+	swm_urls = ShareUrl.objects.filter(url__in=shared_items) | ShareUrl.objects.filter(url__in=group_items)
+	swm_data = []
+	mimetypes.init()
+	for swmurl in swm_urls:
+		if swmurl.owner == request.user:
+			# No need to show user their files
+			continue
+		file_mime = "unknown"
+		guessed_mime = mimetypes.guess_type(swmurl.path)[0]
+		if(guessed_mime == None):
+			if os.path.isfile(swmurl.path):
+				file_mime = "unknown"
+			else:
+				file_mime = "directory"
+		else:
+			file_mime = str(guessed_mime)
+		is_group = False
+		if GroupShare.objects.filter(url__url=swmurl.url).exists():
+			is_group = True
+		swm_data.append({
+			'url': swmurl.url,
+			'owner': swmurl.owner,
+			'filename': os.path.basename(os.path.normpath(swmurl.path)),
+			'filetype': file_mime,
+			'isgroup': is_group
+		})
+	context = {'swm_data': swm_data}
 	return render(request, 'cloud/sharedBrowser.html', context)
+
+
+@user_required
+def private_access(request, share_url):
+	if not ShareUrl.objects.filter(url=share_url).exists():
+		return render(request, 'cloud/e404.html') # 404
+	else:
+		share_data = get_object_or_404(ShareUrl, url=share_url)
+		if not share_data.is_private:
+			# Not for private access
+			return redirect("publicAccess", share_url)
+		else:
+			# Check if the user has access to the resource
+			
+			return HttpResponse()
