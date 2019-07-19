@@ -171,7 +171,10 @@ def file_details(request):
 				return HttpResponseNotFound("Missing file")
 			else:
 				share_data = get_object_or_404(ShareUrl, url=file_share)
-				user_rec = share_data.owner
+				if share_data.is_private and not user_has_access(request.user, file_share):
+					return HttpResponseForbidden("Access Denied")
+				else:
+					user_rec = share_data.owner
 		fm = FileManager(user_rec)
 		file_information = {}
 		file_path = request.POST.get("filepath", None)
@@ -211,7 +214,7 @@ def file_download(request):
 		return fm.download_file(request.GET.get("file"))
 	else:
 		if not ShareUrl.objects.filter(url=file_share).exists():
-			return render(request, 'cloud/e404.html') # 404
+			return render(request, 'cloud/e404.html', status=404) # 404
 		else:
 			share_data = get_object_or_404(ShareUrl, url=file_share)
 			fm = FileManager(share_data.owner)
@@ -251,7 +254,10 @@ def file_upload(request):
 					return JsonResponse({'result': 1})
 				else:
 					share_data = get_object_or_404(ShareUrl, url=file_share)
-					user_rec = share_data.owner
+					if share_data.is_private and not user_has_access(request.user, file_share):
+						return JsonResponse({'result': 1})
+					else:
+						user_rec = share_data.owner
 			fm = FileManager(user_rec)
 			fm.update_path(upload_form.cleaned_data['upload_path'])
 			user_db = get_object_or_404(User, pk=user_rec.user_id)
@@ -287,7 +293,10 @@ def create_directory(request):
 					return JsonResponse({'result': 1})
 				else:
 					share_data = get_object_or_404(ShareUrl, url=file_share)
-					user_rec = share_data.owner
+					if share_data.is_private and not user_has_access(request.user, file_share):
+						return JsonResponse({'result': 1})
+					else:
+						user_rec = share_data.owner
 			fm = FileManager(user_rec)
 			fm.update_path(mkdir_form.cleaned_data['dir_path'])
 			mkdir_status = fm.create_directory(mkdir_form.cleaned_data['dir_name'])
@@ -494,12 +503,12 @@ def public_share(request):
 
 def public_access(request, share_url):
 	if not ShareUrl.objects.filter(url=share_url).exists():
-		return render(request, 'cloud/e404.html') # 404
+		return render(request, 'cloud/e404.html', status=404) # 404
 	else:
 		share_data = get_object_or_404(ShareUrl, url=share_url)
 		if share_data.is_private:
 			# Not for public access
-			return render(request, 'cloud/e404.html') # 404
+			return render(request, 'cloud/e404.html', status=404) # 404
 		else:
 			# Public access
 			fm = FileManager(share_data.owner)
@@ -561,22 +570,63 @@ def shared_with_me(request):
 			'owner': swmurl.owner,
 			'filename': os.path.basename(os.path.normpath(swmurl.path)),
 			'filetype': file_mime,
-			'isgroup': is_group
+			'isgroup': is_group,
+			'canedit': swmurl.can_edit
 		})
 	context = {'swm_data': swm_data}
 	return render(request, 'cloud/sharedBrowser.html', context)
 
 
+def user_has_access(user, res_url):
+	# Check if the user has access to a shared resource
+	if not user.is_authenticated:
+		# Unauthenticated users not allowed
+		return False
+	user_has_access_to_res = False
+	# Check user share
+	if UserShare.objects.filter(url__url=res_url, shared_with=user).exists():
+		user_has_access_to_res = True
+	# Check group share
+	if UserGroup.objects.filter(group__in=GroupShare.objects.filter(url__url=res_url).values("group"), user=user).exists():
+		user_has_access_to_res = True
+
+	return user_has_access_to_res
+
+
 @user_required
 def private_access(request, share_url):
 	if not ShareUrl.objects.filter(url=share_url).exists():
-		return render(request, 'cloud/e404.html') # 404
+		return render(request, 'cloud/e404.html', status=404) # 404
 	else:
 		share_data = get_object_or_404(ShareUrl, url=share_url)
 		if not share_data.is_private:
 			# Not for private access
 			return redirect("publicAccess", share_url)
 		else:
-			# Check if the user has access to the resource
-			
-			return HttpResponse()
+			if not user_has_access(request.user, share_url):
+				return render(request, 'cloud/e403.html', status=403) # 403
+			else:
+				fm = FileManager(share_data.owner)
+				is_file = fm.set_share_path(share_data.path)
+				if is_file == 1:
+					# File details
+					context = fm.file_details(share_data.path)
+					context.update({'fileowner': share_data.owner, 'shareurl': share_url})
+					return render(request, 'cloud/fileShare.html', context)
+				else:
+					# Directory Explorer
+					mkdir_form = MkdirForm()
+					upload_form = UploadForm()
+					mkdir_form.initial['dir_path'] = share_data.path # Default path
+					upload_form.initial['upload_path'] = share_data.path # Set defaiult path
+					if 'p' in dict(request.GET) and len(dict(request.GET)['p'][0]) > 0:
+						new_path = dict(request.GET)['p'][0].replace("../", "") # No previous directory browsing
+						fm.update_path(new_path)
+						mkdir_form.initial['dir_path'] = new_path
+						upload_form.initial['upload_path'] = new_path
+					mkdir_form.initial['share_url'] = share_url
+					upload_form.initial['share_url'] = share_url
+					context = {'files': fm.directory_list(), 'uploadForm': upload_form, 'mkdirForm': mkdir_form,
+							'shareurl': share_url, 'canEdit': share_data.can_edit, 'sharelink': settings.EXTERNAL_URL + 'swma/' + share_url}
+					fm.update_context_data(context)
+					return render(request, 'cloud/directoryShare.html', context)

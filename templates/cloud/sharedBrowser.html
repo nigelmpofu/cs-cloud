@@ -21,6 +21,7 @@
 					<th>Name</th>
 					<th>Owner</th>
 					<th style="color: grey;">Sharing</th>
+					<th>Can Edit?</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -30,6 +31,11 @@
 					<td><a href="{% url 'swmAccess' file.url %}">{{file.filename}}</a></td>
 					<td>{{file.owner}}</td>
 					<td><i class="fa fa-{% if file.isgroup %}group{%else%}user{%endif%}" style="font-size: 16pt; color: grey;" data-toggle="tooltip" title="Shared with {% if file.isgroup %}Group{%else%}User{%endif%}"></i></td>
+					{% if file.filetype == "directory" %}
+					<td><i class="fa fa-{% if file.canedit %}check{%else%}times{%endif%}" style="font-size: 16pt;"></i></td>
+					{% else %}
+					<td>-</td>
+					{% endif %}
 				</tr>
 				{% empty %}
 				<tr>
