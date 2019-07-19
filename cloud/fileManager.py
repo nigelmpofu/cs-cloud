@@ -122,7 +122,6 @@ class FileManager(object):
 
 
 	def file_details(self, file_path):
-		# TODO: GET SHARED LINK
 		file_path = self.user_storage.path(file_path)
 		filename = smart_str(os.path.split(file_path)[1]) # Extract filemame
 		if os.path.isfile(file_path):
@@ -225,10 +224,27 @@ class FileManager(object):
 		except Exception:
 			return HttpResponseNotFound("File not found")
 		# Permanantly delete file
+		total_size = 0
 		if os.path.isdir(delete_path):
+			# Get the size of the file
+			for path, dirs, files in os.walk(delete_path):
+				for f in files:
+					fp = os.path.join(path, f)
+					total_size += os.path.getsize(fp)
+				for fold in dirs:
+					total_size += 4096
 			shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
+			# Update Quota
+			user_db = get_object_or_404(User, pk=self.current_user.user_id)
+			user_db.used_quota = user_db.used_quota - int(total_size)
+			user_db.save()
 		else:
+			total_size = os.path.getsize(delete_path)
 			os.remove(delete_path) # Delete file
+			# Update Quota
+			user_db = get_object_or_404(User, pk=self.current_user.user_id)
+			user_db.used_quota = user_db.used_quota - int(total_size)
+			user_db.save()
 		return JsonResponse({'result': 0})
 
 
@@ -261,10 +277,21 @@ class FileManager(object):
 
 	def empty_trash(self):
 		# Delete trsah folder and recreate it
-		# TODO: Wipe database
 		delete_path = self.user_trash
+		# Get the size of the trash
+		total_size = 0
+		for path, dirs, files in os.walk(delete_path):
+			for f in files:
+				fp = os.path.join(path, f)
+				total_size += os.path.getsize(fp)
+			for fold in dirs:
+				total_size += 4096
 		shutil.rmtree(delete_path, ignore_errors=True) # Delete selected directory
 		os.mkdir(delete_path)
+		# Update Quota
+		user_db = get_object_or_404(User, pk=self.current_user.user_id)
+		user_db.used_quota = user_db.used_quota - int(total_size)
+		user_db.save()
 		return JsonResponse({'result': 0})
 
 
@@ -324,6 +351,10 @@ class FileManager(object):
 			temp_file = os.path.join(new_path, '.tmp')
 			self.user_storage.save(temp_file, ContentFile(''))
 			self.user_storage.delete(temp_file)
+			user_db = get_object_or_404(User, pk=self.current_user.user_id)
+			# Update Quota - 4KB per directory
+			user_db.used_quota = user_db.used_quota + int(4096)
+			user_db.save()
 			return True
 
 
