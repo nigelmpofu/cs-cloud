@@ -84,7 +84,8 @@
 					</div>
 					<div class="tab-pane fade" id="pills-public" role="tabpanel" aria-labelledby="pills-public-tab">
 						<h4><u>Public Link</u></h4>
-						<a id="sharelink" href="" target="_blank" style="font-size: 16pt;"><b>http://cloud.cs.up.ac.za/s/share</b></a><i id="linkcopy" onclick="copyLink();" class="fa fa-clone" style="cursor: pointer; padding-left: 8px; padding-bottom: 16px; font-size: 16pt;" data-toggle="tooltip" title="Copy Link"></i><br/>
+						<a id="sharelink" href="" target="_blank" style="font-size: 16pt;"><b>http://cloud.cs.up.ac.za/s/share</b></a><i id="linkcopy" onclick="copyLink();" class="fa fa-clone" style="cursor: pointer; padding-left: 8px; padding-bottom: 16px; font-size: 16pt;" data-toggle="tooltip" title="Copy Link"></i><br/><hr>
+						<label for="edit_cb" style="font-size: 12pt; padding-right: 8px;">Can Edit?</label><input type="checkbox" class="form-control" id="edit_cb" style="font-size: 12pt;"><br/>
 						<button type="button" class="btn btn-primary" id="pubShareBtn" onclick="publicShare()">Share</button>
 					</div>
 				</div>
@@ -113,6 +114,7 @@
 	$("#shareModal").on("hidden.bs.modal", function() {
 		// Clean up on modal close
 		$("#shmodalTitle").html("Share: ...");
+		$("#edit_cb").attr("checked", false);
 		// Clear datatables
 		groupTable.destroy();
 		userTable.destroy();
@@ -226,11 +228,15 @@
 					$("#sharelink").text(data.sharelink);
 					$("#sharelink").attr("href", data.sharelink);
 					$("#linkcopy").show();
+					$("#edit_cb").attr("checked", data.shareedit);
+					$("#edit_cb").attr("disabled", true);
 					$("#pubShareBtn").text("Delete Link");	
 				} else {
 					$("#sharelink").text("--- Not Shared ---");
 					$("#sharelink").removeAttr("href");
 					$("#linkcopy").hide();
+					$("#edit_cb").attr("checked", false);
+					$("#edit_cb").attr("disabled", false);
 					$("#pubShareBtn").text("Share");
 				}
 			},
@@ -364,18 +370,22 @@
 			url: "{% url 'publicShare' %}",
 			type: "POST",
 			async: true,
-			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath},
+			data: {'csrfmiddlewaretoken': '{{csrf_token}}', 'filepath': filePath, 'canedit': $("#edit_cb").is(":checked") ? 1 : 0},
 			dataType: "json",
 			success: function(data) {
 				if(data.result === 0) {
 					$("#sharelink").text(data.sharelink);
 					$("#sharelink").attr("href", data.sharelink);
 					$("#linkcopy").show();
+					$("#edit_cb").attr("checked", data.shareedit);
+					$("#edit_cb").attr("disabled", true);
 					$("#pubShareBtn").text("Delete Link");
 				} else if(data.result === 1) {
 					$("#sharelink").text("--- Not Shared ---");
 					$("#sharelink").removeAttr("href");
 					$("#linkcopy").hide();
+					$("#edit_cb").attr("checked", data.shareedit);
+					$("#edit_cb").attr("disabled", false);
 					$("#pubShareBtn").text("Share");
 				} else {
 					$("#sharelink").text("Error: File could not be shared");
@@ -388,12 +398,14 @@
 				$("#sharelink").text("Error: Link could not be retrieved");
 				$("#sharelink").removeAttr("href");
 				$("#linkcopy").hide();
+				$("#edit_cb").attr("checked", false);
 				$("#pubShareBtn").text("Share");
 			},
 			failure: function() {
 				$("#sharelink").text("Error: Link could not be retrieved");
 				$("#sharelink").removeAttr("href");
 				$("#linkcopy").hide();
+				$("#edit_cb").attr("checked", false);
 				$("#pubShareBtn").text("Share");
 			},
 			timeout: 5000 // 5 Second timeout

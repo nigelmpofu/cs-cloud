@@ -499,9 +499,14 @@ def public_share(request):
 					new_url = str(get_random_string(length=12)) # Regenerate random share link
 				try:
 					user = get_object_or_404(User, user_id=request.user.pk)
-					new_share = ShareUrl.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url, can_edit=False, is_private=False)
+					can_public_edit = False
+					if int(request.POST.get("canedit", 0)) == 1:
+						can_public_edit = True
+					else:
+						can_public_edit = False
+					new_share = ShareUrl.objects.create(owner=user, path=request.POST.get("filepath", None), url=new_url, can_edit=can_public_edit, is_private=False)
 					if new_share:
-						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url})
+						return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + new_url, 'shareedit': can_public_edit})
 					else:
 						return JsonResponse({'result': 2})
 				except Exception as ex:
@@ -509,8 +514,8 @@ def public_share(request):
 		else:
 			# Return share list
 			if ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).exists():
-				share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", flat=True)[0]
-				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url)})
+				share_url = ShareUrl.objects.filter(owner=User(user_id=request.user.pk), path=request.POST.get("filepath", "")).values_list("url", "can_edit")
+				return JsonResponse({'result': 0, 'sharelink': settings.EXTERNAL_URL + 's/' + str(share_url[0][0]), 'shareedit': share_url[0][1]})
 			else:
 				return JsonResponse({'result': 1})
 	else:
