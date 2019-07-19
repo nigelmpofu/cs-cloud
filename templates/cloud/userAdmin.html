@@ -103,7 +103,13 @@
 									<td data-id="email">{{ user.email }}</td>
 									<td data-id="cell" style="display: none;">{{ user.cell }}</td>
 									<td data-id="acc_type" style="text-align: center;"><i class="fa {% if user.is_staff %}fa-check{%else%}fa-times{%endif%}" style="font-size: 16pt;"></i></td>
-									<td data-id="spaceUsed" data-sort="{{user.used_quota}}" style="text-align: center;">{{ user.used_quota|div:1048576 }}/{{ user.disk_quota|div:1048576 }}<br/>({{user.used_quota|div:user.disk_quota|mul:100}}%)</td>
+									<td data-id="spaceUsed" data-sort="{{user.used_quota}}" style="text-align: center;">{{ user.used_quota|div:1048576|floatformat:"1" }} / {% if user.disk_quota == 0 %}<span style="font-size: 17pt;"> <b>&infin;</b></span>{%else%}{{ user.disk_quota|div:1048576|floatformat:"1" }}{%endif%}<br/>
+									{% if user.disk_quota == 0 %}
+									({{user.used_quota|div:freeSpace|mul:100|floatformat:"1"}}%)
+									{%else%}
+									({{user.used_quota|div:user.disk_quota|mul:100|floatformat:"1"}}%)
+									{% endif %}
+									</td>
 									<td data-id="quota" style="display: none;">{{ user.disk_quota|div:1048576 }}</td>
 									<td style="text-align: center;">
 										<button type="button" name="edit" class='btn btn-primary btn-xs rounded-circle edit'

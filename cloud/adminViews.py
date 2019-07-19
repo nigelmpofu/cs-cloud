@@ -25,7 +25,7 @@ def user_admin(request):
 	if request.user.is_staff:
 		user_form = UserForm()
 		users = User.objects.all
-		context = {'userForm': user_form, 'users': users}
+		context = {'userForm': user_form, 'users': users, 'freeSpace': shutil.disk_usage(settings.MEDIA_ROOT)[2]}
 		return render(request, 'cloud/userAdmin.html', context)
 	else:
 		# Just incase
