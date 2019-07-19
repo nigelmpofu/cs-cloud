@@ -191,6 +191,7 @@ def file_details(request):
 		# Reject get request
 		return HttpResponseForbidden("Not allowed")
 
+
 @user_required
 def file_search(request):
 	if request.method == "POST":

@@ -16,7 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.template import loader
 from .tokens import tokenizer
 from .forms import GroupForm, GroupMemberForm, UserForm
-from .mailer import send_password_request_email
+from .mailer import send_account_activity, send_group_activity, send_password_request_email
 from .models import Group, User, UserGroup
 from .views import reset_password
 
@@ -80,6 +80,11 @@ def delete_group(request):
 			groups_to_delete = request.POST.getlist("toDelete[]")
 			for group_id in groups_to_delete:
 				group = get_object_or_404(Group, pk=group_id)
+				# Notify users group has been deleted
+				users_in_group = UserGroup.objects.filter(group=group).values("user_id")
+				group_user = User.objects.filter(user_id__in=users_in_group)
+				for user in group_user:
+					send_group_activity(user.email, user.name, user.surname, user.user_id, group.name, action_type=2)
 				group.delete()
 			# Deletion complete
 			return HttpResponse()
@@ -88,6 +93,7 @@ def delete_group(request):
 			return HttpResponseForbidden()
 	else:
 		return redirect("fileExplorer")
+
 
 @admin_required
 def list_group(request):
@@ -124,6 +130,7 @@ def add_group_member(request):
 					if not usrgroup:
 						return JsonResponse({'result': 3}) # Error
 					else:
+						send_group_activity(user.email, user.name, user.surname, user.user_id, group.name, action_type=0)
 						return JsonResponse({'result': 0}) # Success
 		else:
 			return JsonResponse({'result': 3}) # Error
@@ -143,6 +150,9 @@ def remove_group_member(request):
 				usergroup = get_object_or_404(UserGroup, user=User(user_id=user_id), group=Group(pk=group_id))
 				usergroup.delete()
 				# Removal complete
+				group = get_object_or_404(Group, pk=group_id)
+				user = get_object_or_404(User, user_id=user_id)
+				send_group_activity(user.email, user.name, user.surname, user.user_id, group.name, action_type=1)
 				return HttpResponse()
 		else:
 			return HttpResponseForbidden("Request Error")
@@ -162,6 +172,7 @@ def list_members(request):
 		return render(request, 'cloud/groupMemberFrame.html', context)
 	else:
 		return redirect("fileExplorer")
+
 
 @user_required
 def disk_data(request):
@@ -303,6 +314,7 @@ def submit_user(request):
 		messages.error(request, "There was an error processing your request")
 	return redirect("userAdmin")
 
+
 """
 Check if a given user already exists
 """
@@ -404,6 +416,7 @@ def edit_user(request):
 		user.is_staff = str2bool(post_is_admin)
 		user.is_superuser = str2bool(post_is_admin)
 		user.save()
+		send_account_activity(user.email, user.name, user.surname, user.user_id, action_type=0)
 		return HttpResponse()
 	else:
 		# Get Request not allowed
@@ -439,10 +452,15 @@ def users_delete(request):
 				shutil.rmtree(user_trash, ignore_errors=True) # Delete ALL user trash
 			except Exception as ex:
 				pass
+			# Store info for email before delete
+			e_user_email = user.email
+			e_user_name = user.name
+			e_user_surname = user.surname
+			e_user_id = user.user_id
 			user.delete()
+			send_account_activity(e_user_email, e_user_name, e_user_surname, e_user_id, action_type=1)
 		# Deletion complete
 		return HttpResponse()
 	else:
 		# You don't get it
 		return HttpResponseForbidden()
-

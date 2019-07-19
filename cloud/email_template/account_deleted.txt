@@ -1,0 +1,8 @@
+Good day {first_name} {last_name}.
+
+Your CS Cloud Account has been successfully deleted.
+All user data has also been deleted.
+User: {user_id}
+
+Kind regards,
+The CS Cloud Team

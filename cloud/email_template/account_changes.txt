@@ -1,0 +1,9 @@
+Good day {first_name} {last_name}.
+
+Changes have been made to your CS Cloud Account.
+User: {user_id}
+
+Please login to review the changes.
+
+Kind regards,
+The CS Cloud Team

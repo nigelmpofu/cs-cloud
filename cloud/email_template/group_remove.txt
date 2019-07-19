@@ -1,0 +1,8 @@
+Good day {first_name} {last_name}.
+
+You have been removed from the following group:
+Group: {group_name}
+User: {user_id}
+
+Kind regards,
+The CS Cloud Team

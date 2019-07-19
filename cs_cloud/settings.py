@@ -169,7 +169,7 @@ Note: nigelvm.com used for demonstration purposes only
 """
 FROM_EMAIL_ADDRESS = 'CS Cloud <cs_cloud@nigelvm.com>'
 EMAIL_USE_TLS = True
-EMAIL_HOST = ""
+EMAIL_HOST = "nigelvm.com"
 EMAIL_PORT = 25
 EMAIL_HOST_USER = "cs_cloud"
 EMAIL_HOST_PASSWORD = "cloud.cs.up.ac.za"
