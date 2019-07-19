@@ -49,6 +49,7 @@ urlpatterns = [
 	
 	# File URLS
 	path('files/', userViews.file_explorer, name="fileExplorer"),
+	path('files/search/', userViews.file_search, name="fileSearch"),
 	path('files/trash/', userViews.trash_explorer, name="trashExplorer"),
 	path('files/trash/delete/', userViews.file_delete_perm, name="permDelete"),
 	path('files/trash/empty/', userViews.empty_trash, name="emptyTrash"),

@@ -123,6 +123,13 @@ class RenameForm(forms.Form):
 	rename_path = forms.CharField(widget=forms.HiddenInput(), required=False)
 
 
+class SearchForm(forms.Form):
+	search_item = forms.CharField(
+		label="Search Query",
+		max_length = 64,
+		widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search Query', 'autocomplete': 'off'}))
+
+
 class GroupForm(forms.Form):
 	groupname = forms.CharField(
 		label="Group Name",

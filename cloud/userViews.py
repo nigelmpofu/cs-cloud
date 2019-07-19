@@ -12,7 +12,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.crypto import get_random_string
 from .tokens import tokenizer
-from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, ResetForm, UploadForm, GroupShareForm, UserShareForm
+from .forms import LoginForm, MkdirForm, RecoverPasswordForm, RenameForm, SearchForm, ResetForm, UploadForm, GroupShareForm, UserShareForm
 from .mailer import send_password_request_email, send_share_email
 from .models import Group, GroupShare, ShareUrl, User, UserGroup, UserShare
 from .fileManager import FileManager
@@ -190,6 +190,21 @@ def file_details(request):
 	else:
 		# Reject get request
 		return HttpResponseForbidden("Not allowed")
+
+@user_required
+def file_search(request):
+	if request.method == "POST":
+		search_form = SearchForm(request.POST)
+		search_form.full_clean()
+		if search_form.is_valid():
+			fm = FileManager(request.user)
+			return fm.file_search(search_form.cleaned_data['search_item'].replace("../", ""))
+		else:
+			return JsonResponse({'result': 1})
+	else:
+		search_form = SearchForm()
+		context = {'search_form': search_form}
+		return render(request, 'cloud/fileSearch.html', context)
 
 
 def file_rename(request):

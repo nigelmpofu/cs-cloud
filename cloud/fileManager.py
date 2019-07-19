@@ -2,6 +2,7 @@ import os
 import hashlib
 import mimetypes
 import shutil
+from pathlib import Path
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
@@ -372,3 +373,11 @@ class FileManager(object):
 				share_url.path = new_url_path
 				share_url.save()
 			return True
+
+
+	def file_search(self, search_item):
+		file_list = []
+		# Recursively search through user directory
+		for filename in Path(self.user_storage.path("")).glob('**/' + search_item):
+			file_list.append(str(filename).replace(self.user_storage.path(""), "")) # Remove absolute path to home directory
+		return JsonResponse({'result': 0, 'files': file_list, 'search_query': search_item})
