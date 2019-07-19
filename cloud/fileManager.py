@@ -8,7 +8,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, JsonResponse
 from django.utils.encoding import smart_str
 from django.shortcuts import get_object_or_404
-from .models import User
+from .models import ShareUrl, User
 from wsgiref.util import FileWrapper
 
 
@@ -66,7 +66,7 @@ class FileManager(object):
 		self.user_directory = settings.MEDIA_ROOT + "/" + self.current_user.user_id
 		self.user_trash = settings.TRASH_ROOT  + "/" + self.current_user.user_id
 		self.user_storage = FileSystemStorage(location=self.user_directory)
-		self.trash_storage = FileSystemStorage(location=self.user_trash)		
+		self.trash_storage = FileSystemStorage(location=self.user_trash)
 		if os.path.isfile(self.user_storage.path(path)):
 			return 1 # File
 		else:
@@ -210,8 +210,11 @@ class FileManager(object):
 		except Exception:
 			return HttpResponseNotFound("File not found")
 		# Move to trash
-		# TODO: Unshare file if shared
 		shutil.move(delete_path, self.trash_storage.path(self.user_trash))
+		# Unshare item if it is shared
+		if ShareUrl.objects.filter(owner=self.current_user, path=item_path).exists():
+			share_url = get_object_or_404(ShareUrl, owner=self.current_user, path=item_path)
+			share_url.delete()
 		return JsonResponse({'result': 0})
 
 
@@ -333,6 +336,14 @@ class FileManager(object):
 			return JsonResponse({"result": 1, "message": "Cannot move '" + current_path.replace(self.user_storage.path(""), "") + "' into itself"}) # Error
 		try:
 			shutil.move(current_path, move_path)
+			if ShareUrl.objects.filter(owner=self.current_user, path=old_path).exists():
+				share_url = get_object_or_404(ShareUrl, owner=self.current_user, path=old_path)
+				# Remove leading slash
+				new_url_path = move_path.replace(self.user_storage.path(""), "") + "/" + os.path.basename(os.path.normpath(old_path))
+				while new_url_path.startswith("/"):
+					new_url_path = new_url_path[1:]
+				share_url.path = new_url_path
+				share_url.save()
 		except shutil.Error as ex:
 			# Strip user directory location and return error
 			return JsonResponse({"result": 1, "message": str(ex).replace(self.user_storage.path(""), "")}) # Some sort of error
@@ -347,9 +358,17 @@ class FileManager(object):
 			return False
 		new_name_path = os.path.join(self.user_storage.path(rename_path), "../")
 		new_name_path = os.path.join(self.user_storage.path(new_name_path), new_name)
-		# TODO: Change shared urls if necessary
 		if os.path.exists(new_name_path):
 			return False
 		else:
 			os.rename(rename_path, new_name_path)
+			# Update links if necessary
+			if ShareUrl.objects.filter(owner=self.current_user, path=file_path).exists():
+				share_url = get_object_or_404(ShareUrl, owner=self.current_user, path=file_path)
+				# Remove leading slash
+				new_url_path = new_name_path.replace(self.user_storage.path(""), "")
+				while new_url_path.startswith("/"):
+					new_url_path = new_url_path[1:]
+				share_url.path = new_url_path
+				share_url.save()
 			return True
