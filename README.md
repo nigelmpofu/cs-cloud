@@ -15,3 +15,6 @@ File storage and sharing service that will be used by the CS department staff at
     - `python3 manage.py createsuperuser` 
 - Run the server
     - `python3 manage.py runserver`
+
+
+ _Note: Loading may be delayed while attempting to send emails on a slow Internet connection_
