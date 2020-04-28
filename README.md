@@ -7,7 +7,10 @@ File storage and sharing service that will be used by the CS department staff at
 - Clone the CS-Cloud repository and `cd` into it
     - `git clone https://github.com/nigelmpofu/cs-cloud.git`
     - `cd cs-cloud`
-- Install Django **2.2.4** and other packages [python 3.5+ required]
+- _(Recommended)_ Create a new Python 3 virtual environment
+    - Create it: `python3 -m venv ./venv`
+    - Activate it: `source ./venv/bin/activate`
+- Install Django **2.2.10** and other packages [python 3.5+ required]
     - `pip3 install -r ./requirements.txt`
 - Apply Database Migrations
     - `python3 manage.py migrate`
