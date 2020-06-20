@@ -28,4 +28,5 @@ In order to enable email functionality:
 - Add email server configuration to the `config.py` file located in the `cs_cloud` directory.
 - Leave `EMAIL_HOST` blank to diable email functionality.
 - If the `DEBUG` flag is set in `settings.py` then emails will also be printed to the console.
+ 
  _Note: Loading may be delayed while attempting to send emails on a slow Internet connection._
